@@ -39,5 +39,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/d3-delaunay": "^6.0.4",
+    "d3-delaunay": "^6.0.4"
   }
 }
