@@ -39,35 +39,52 @@ const ChiShapeVisualization: React.FC = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const { chiShape, delaunayTriangles, outsideEdges, lengthThreshold } = calculateChiShape(points, lambda);
-
     setLengthThresh(lengthThreshold)
+
+   // Draw points
+   ctx.fillStyle = 'black';
+   points.forEach(point => {
+     ctx.beginPath();
+     ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+     ctx.fill();
+   });
+
     // Draw Delaunay triangulation
     ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
+    ctx.fillStyle = "white";
     ctx.lineWidth = 1;
     delaunayTriangles.forEach(([a, b, c]) => {
       ctx.beginPath();
       ctx.moveTo(points[a].x, points[a].y);
+      ctx.fillText(a.toString(), points[a].x, points[a].y);
       ctx.lineTo(points[b].x, points[b].y);
+      ctx.fillText(b.toString(), points[b].x, points[b].y);
       ctx.lineTo(points[c].x, points[c].y);
       ctx.closePath();
       ctx.stroke();
     });
 
-    ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
-    ctx.lineWidth = 4;
-    outsideEdges.forEach((e: Edge) => {
-      ctx.setLineDash(e.withinLength ? [] : [10, 15])
-      ctx.beginPath()
-      ctx.moveTo(e.start.x, e.start.y)
-      ctx.lineTo(e.end.x, e.end.y)
-      ctx.stroke()
-    })
-
-    ctx.setLineDash([])
+    // Draw outside edges
+    outsideEdges.forEach(edge => {
+      ctx.beginPath();
+      ctx.moveTo(edge.start.x, edge.start.y);
+      ctx.lineTo(edge.end.x, edge.end.y);
+      
+      if (edge.isRegular && edge.withinLength) {
+        ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)'; // Green for edges that meet both criteria
+      } else if (edge.isRegular) {
+        ctx.strokeStyle = 'rgba(255, 165, 0, 0.8)'; // Orange for regular but too short edges
+      } else {
+        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)'; // Red for irregular edges
+      }
+      
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
 
     // Draw χ-shape
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(128, 0, 128, 0.8)'; // Purple for the final χ-shape
+    ctx.lineWidth = 3;
     ctx.beginPath();
     chiShape.forEach((point, index) => {
       if (index === 0) ctx.moveTo(point.x, point.y);
@@ -76,17 +93,15 @@ const ChiShapeVisualization: React.FC = () => {
     ctx.closePath();
     ctx.stroke();
 
-    // Draw points
+ 
+
+    // Display length threshold
     ctx.fillStyle = 'black';
-    points.forEach(point => {
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-      ctx.fill();
-    });
-
-
+    ctx.font = '14px Arial';
+    ctx.fillText(`Length Threshold: ${lengthThreshold.toFixed(2)}`, 10, 30);
 
   }, [points, lambda]);
+
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();

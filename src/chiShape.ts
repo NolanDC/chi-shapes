@@ -1,10 +1,9 @@
 import { Delaunay } from 'd3-delaunay';
 import { Vector } from './vector';
-import { within } from '@testing-library/react';
 
 export interface Edge {
   start: Vector,
-  end: Vector, 
+  end: Vector,
   isRegular: boolean,
   withinLength: boolean
 }
@@ -16,111 +15,128 @@ interface ChiShapeResult {
   lengthThreshold: number;
 }
 
-// Helper function to check regularity of triangulation after edge removal
-function isRegular(delaunay: Delaunay<[number, number]>, edge: [number, number], triangles: [number, number, number][]): boolean {
-  // Ensure that the removal of this edge will not violate the triangulation structure
-  // by checking if the third vertex is still part of the triangulation
-  const [a, b] = edge;
-  
-  // Find the triangle adjacent to the edge
-  const adjacentTriangles = triangles.filter(tri => tri.includes(a) && tri.includes(b));
-
-  if (adjacentTriangles.length !== 1) {
-    // The edge must belong to exactly one triangle to be a boundary edge
-    return false;
-  }
-
-  const [v1, v2, v3] = adjacentTriangles[0];
-  
-  // Check if removing the edge still connects the vertex correctly
-  const thirdVertex = v1 === a || v1 === b ? (v2 === a || v2 === b ? v3 : v2) : v1;
-  
-  return Array.from(delaunay.neighbors(thirdVertex)).length > 1; // Ensure third vertex has other connections
+class Dart {
+  constructor(public from: number, public to: number) {}
 }
 
-export function calculateChiShape(points: Vector[], lambda: number): ChiShapeResult {
-  if (points.length < 3) {
-    // Return an empty result if there are fewer than 3 points
-    return { chiShape: [], delaunayTriangles: [], outsideEdges: [], lengthThreshold: 0 };
-  }
-
-  // Convert Vector objects to arrays for d3-delaunay
-  const pointArrays = points.map(p => [p.x, p.y]);
-  
-  // Create Delaunay triangulation
+function calculateChiShape(points: Vector[], lambda: number): ChiShapeResult {
+  const pointArrays = points.map(p => [p.x, p.y] as [number, number]);
   const delaunay = new Delaunay(pointArrays.flat());
   const triangles = delaunay.triangles;
-  
-  // Initialize edge list
-  let edges: [number, number][] = [];
-  for (let i = 0; i < triangles.length; i += 3) {
-    edges.push([triangles[i], triangles[i+1]]);
-    edges.push([triangles[i+1], triangles[i+2]]);
-    edges.push([triangles[i+2], triangles[i]]);
-  }
-  
-  // Identify boundary edges
-  const edgeCounts = new Map<string, number>();
-  edges.forEach(edge => {
-    const edgeKey = edge.sort().toString();
-    edgeCounts.set(edgeKey, (edgeCounts.get(edgeKey) || 0) + 1);
-  });
-  
-  // Filter and sort boundary edges
-  const boundaryEdges = edges
-    .filter(edge => edgeCounts.get(edge.sort().toString()) === 1)
-    .sort((a, b) => 
-      Vector.dist(points[b[0]], points[b[1]]) - Vector.dist(points[a[0]], points[a[1]])
-    );
-  
-  // Filter edges based on lambda
-  const minLength = Vector.dist(points[boundaryEdges[boundaryEdges.length-1][0]], points[boundaryEdges[boundaryEdges.length-1][1]]);
-  const maxLength = Vector.dist(points[boundaryEdges[0][0]], points[boundaryEdges[0][1]]);
-  const lengthThreshold = minLength + lambda * (maxLength - minLength);
-  
+
+  // Step 1: Construct the Delaunay triangulation Δ of P
   const triangleTuples: [number, number, number][] = [];
-  for (let i = 0; i < delaunay.triangles.length; i += 3) {
-    triangleTuples.push([delaunay.triangles[i], delaunay.triangles[i + 1], delaunay.triangles[i + 2]]);
+  for (let i = 0; i < triangles.length; i += 3) {
+    triangleTuples.push([triangles[i], triangles[i + 1], triangles[i + 2]]);
   }
+  console.log('tuples: ', triangleTuples);
+
+  // Step 2: Construct the list B of boundary edges
+
+
+  const edgeCounts = new Map<string, number>();
+  triangleTuples.forEach(([a, b, c]) => {
+    const edges = [[a, b], [b, c], [c, a]];
+    edges.forEach(([from, to]) => {
+      const edgeKey = from < to ? `${from},${to}` : `${to},${from}`;
+      edgeCounts.set(edgeKey, (edgeCounts.get(edgeKey) || 0) + 1);
+    });
+  });
+  console.log('hi');
   
-  const filteredEdges = boundaryEdges.filter(edge => {
-    const edgeLength = Vector.dist(points[edge[0]], points[edge[1]]);
-    return edgeLength > lengthThreshold && isRegular(delaunay, edge, triangleTuples);
+
+  const boundaryEdges = Array.from(edgeCounts.entries())
+    .filter(([_, count]) => count === 1)
+    .map(([key, _]) => {
+      const [from, to] = key.split(',').map(Number);
+      return new Dart(from, to);
+    });
+
+  console.log('edge counts', edgeCounts)
+  const B = boundaryEdges.sort((a, b) => 
+    Vector.dist(points[b.from], points[b.to]) - Vector.dist(points[a.from], points[a.to])
+  );
+
+  console.log('edges length', B.length)
+  // Step 3: Sort B in descending order of edge length
+  B.sort((a, b) => 
+    Vector.dist(points[b.from], points[b.to]) - Vector.dist(points[a.from], points[a.to])
+  );
+
+  // Calculate length threshold
+  let lengthThreshold = 0;
+  if (B.length > 0) {
+    const minLength = Vector.dist(points[B[B.length-1].from], points[B[B.length-1].to]);
+    const maxLength = Vector.dist(points[B[0].from], points[B[0].to]);
+    lengthThreshold = minLength + lambda * (maxLength - minLength);
+  }
+
+  // Step 4-15: Main loop of the algorithm
+  const v_boundary = new Set<number>();
+  B.forEach(dart => {
+    v_boundary.add(dart.from);
+    v_boundary.add(dart.to);
   });
 
-  console.log('edges: ', boundaryEdges.length, ', filtered: ', filteredEdges.length)
-  
-  // Extract boundary polygon
-  let polygon: Vector[] = [];
-  if (filteredEdges.length > 0) {
-    let start = filteredEdges[0][0];
-    let current = filteredEdges[0][1];
-    polygon.push(points[start]);
-    
-    while (current !== start) {
-      polygon.push(points[current]);
-      const nextEdge = filteredEdges.find(e => 
-        (e[0] === current && !polygon.includes(points[e[1]])) ||
-        (e[1] === current && !polygon.includes(points[e[0]]))
-      );
-      if (!nextEdge) break;
-      current = (nextEdge[0] === current) ? nextEdge[1] : nextEdge[0];
+  const outsideEdges: Edge[] = [];
+
+  while (B.length > 0) {
+    const e = B.shift()!;
+    const edgeLength = Vector.dist(points[e.from], points[e.to]);
+    const withinLength = edgeLength > lengthThreshold;
+    const isRegularEdge = isRegular(delaunay, e, v_boundary);
+
+    outsideEdges.push({
+      start: points[e.from],
+      end: points[e.to],
+      isRegular: isRegularEdge,
+      withinLength: withinLength
+    });
+
+    if (withinLength && isRegularEdge) {
+      // Remove edge e from triangulation Δ
+      const thirdVertex = triangleTuples.find(
+        t => t.includes(e.from) && t.includes(e.to)
+      )?.find(v => v !== e.from && v !== e.to);
+
+      if (thirdVertex !== undefined) {
+        v_boundary.add(thirdVertex);
+
+        // Insert the two new boundary edges
+        const newDart1 = new Dart(e.from, thirdVertex);
+        const newDart2 = new Dart(thirdVertex, e.to);
+        insertSorted(B, newDart1, points);
+        insertSorted(B, newDart2, points);
+      }
     }
   }
-  
-  // Prepare Delaunay triangles for rendering
-  const delaunayTriangles: [number, number, number][] = [];
-  for (let i = 0; i < triangles.length; i += 3) {
-    delaunayTriangles.push([triangles[i], triangles[i+1], triangles[i+2]]);
-  }
 
-  const outsideEdges = boundaryEdges.map(e => { 
-    return {
-      start: points[e[0]], 
-      end: points[e[1]],
-      isRegular: isRegular(delaunay, e, triangleTuples),
-      withinLength: Vector.dist(points[e[0]], points[e[1]]) < lengthThreshold
-    } 
-  })
-  return { chiShape: polygon, delaunayTriangles, outsideEdges, lengthThreshold };
+  // Construct the final polygon
+  const chiShape = Array.from(v_boundary).map(i => points[i]);
+
+  return { 
+    chiShape, 
+    delaunayTriangles: triangleTuples, 
+    outsideEdges,
+    lengthThreshold 
+  };
 }
+
+function isRegular(delaunay: Delaunay<[number, number]>, edge: Dart, v_boundary: Set<number>): boolean {
+  const thirdVertex = Array.from(delaunay.neighbors(edge.from)).find(
+    v => v !== edge.to && !v_boundary.has(v)
+  );
+  return thirdVertex !== undefined;
+}
+
+function insertSorted(B: Dart[], dart: Dart, points: Vector[]) {
+  const length = Vector.dist(points[dart.from], points[dart.to]);
+  const index = B.findIndex(d => Vector.dist(points[d.from], points[d.to]) <= length);
+  if (index === -1) {
+    B.push(dart);
+  } else {
+    B.splice(index, 0, dart);
+  }
+}
+
+export { calculateChiShape };
