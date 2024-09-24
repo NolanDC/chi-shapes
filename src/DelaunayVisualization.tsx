@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Vector } from './vector';
-import { calculateChiShape, Edge } from './chiShape';
+import { calculateChiShape, CombinatorialMap, Edge } from './chiShape';
 
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
@@ -12,7 +12,7 @@ const ChiShapeVisualization: React.FC = () => {
     const generateRandomPoints = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      return Array.from({ length: 10 }, () => 
+      return Array.from({ length: 4 }, () => 
         new Vector(Math.random() * width, Math.random() * height)
       );
     };
@@ -32,59 +32,30 @@ const ChiShapeVisualization: React.FC = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
+  
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-
+  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const { chiShape, delaunayTriangles, outsideEdges, lengthThreshold } = calculateChiShape(points, lambda);
-    setLengthThresh(lengthThreshold)
-
-   // Draw points
-   ctx.fillStyle = 'black';
-   points.forEach(point => {
-     ctx.beginPath();
-     ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
-     ctx.fill();
-   });
-
-    // Draw Delaunay triangulation
-    ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
-    ctx.fillStyle = "white";
-    ctx.lineWidth = 1;
-    delaunayTriangles.forEach(([a, b, c]) => {
-      ctx.beginPath();
-      ctx.moveTo(points[a].x, points[a].y);
-      ctx.fillText(a.toString(), points[a].x, points[a].y);
-      ctx.lineTo(points[b].x, points[b].y);
-      ctx.fillText(b.toString(), points[b].x, points[b].y);
-      ctx.lineTo(points[c].x, points[c].y);
-      ctx.closePath();
-      ctx.stroke();
-    });
-
+    if (points.length < 3) return;
+  
+    const { chiShape, delaunayTriangles, removedEdges, lengthThreshold, combinatorialMap } = calculateChiShape(points, lambda);
+    setLengthThresh(lengthThreshold);
+  
     // Draw outside edges
-    outsideEdges.forEach(edge => {
+    removedEdges.forEach(edge => {
       ctx.beginPath();
+      ctx.lineWidth = 9
       ctx.moveTo(edge.start.x, edge.start.y);
       ctx.lineTo(edge.end.x, edge.end.y);
-      
-      if (edge.isRegular && edge.withinLength) {
-        ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)'; // Green for edges that meet both criteria
-      } else if (edge.isRegular) {
-        ctx.strokeStyle = 'rgba(255, 165, 0, 0.8)'; // Orange for regular but too short edges
-      } else {
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)'; // Red for irregular edges
-      }
-      
+      ctx.strokeStyle = 'rgb(255, 0, 0, 1)';
       ctx.lineWidth = 2;
       ctx.stroke();
     });
-
+  
     // Draw χ-shape
-    ctx.strokeStyle = 'rgba(128, 0, 128, 0.8)'; // Purple for the final χ-shape
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(128, 0, 128, 0.3)';
+    ctx.lineWidth = 10;
     ctx.beginPath();
     chiShape.forEach((point, index) => {
       if (index === 0) ctx.moveTo(point.x, point.y);
@@ -92,16 +63,100 @@ const ChiShapeVisualization: React.FC = () => {
     });
     ctx.closePath();
     ctx.stroke();
-
- 
-
+  
+    // Draw Delaunay triangulation
+    ctx.strokeStyle = 'rgba(0, 0, 255, 0.3)';
+    ctx.lineWidth = 1;
+    delaunayTriangles.forEach(([a, b, c]) => {
+      ctx.beginPath();
+      ctx.moveTo(points[a].x, points[a].y);
+      ctx.lineTo(points[b].x, points[b].y);
+      ctx.lineTo(points[c].x, points[c].y);
+      ctx.closePath();
+      ctx.stroke();
+    });    
+  
+    // Draw darts and labels
+    drawDartsAndLabels(ctx, combinatorialMap, points);
+  
     // Display length threshold
     ctx.fillStyle = 'black';
     ctx.font = '14px Arial';
     ctx.fillText(`Length Threshold: ${lengthThreshold.toFixed(2)}`, 10, 30);
-
+  
+    // Draw points and vertex numbers last
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    points.forEach((point, index) => {
+      // Draw point
+      ctx.fillStyle = 'black';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+      ctx.fill();
+  
+      // Draw vertex number with white outline
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3;
+      ctx.strokeText(index.toString(), point.x, point.y);
+      ctx.fillText(index.toString(), point.x, point.y);
+    });
+  
   }, [points, lambda]);
 
+
+function drawDartsAndLabels(ctx: CanvasRenderingContext2D, map: CombinatorialMap, points: Vector[]) {
+  const arrowSize = 12;
+  ctx.font = 'bold 14px Arial'; // Larger, bold font
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  map.darts.forEach((dart, index) => {
+    const start = points[dart.origin];
+    const end = points[dart.next];
+    
+    
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    
+    // Calculate position 30% along the line
+    const labelX = start.x + dx * 0.3;
+    const labelY = start.y + dy * 0.3;
+    
+    // Draw arrow
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Draw arrowhead at 30% position
+    const angle = Math.atan2(dy, dx);
+    ctx.save();
+    ctx.translate(labelX, labelY);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-arrowSize, -arrowSize / 2);
+    ctx.lineTo(-arrowSize, arrowSize / 2);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fill();
+    ctx.restore();
+    
+    // Draw label
+    const offsetX = dy * 8 / length; // Increased perpendicular offset
+    const offsetY = -dx * 8 / length;
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)'; // Fully opaque text
+    ctx.strokeStyle = 'white'; // White outline for better visibility
+    ctx.lineWidth = 3;
+    ctx.strokeText(index.toString(), labelX + offsetX, labelY + offsetY);
+    ctx.fillText(index.toString() + (dart.removed ? 'r' : ''), labelX + offsetX, labelY + offsetY);
+  });
+}
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
