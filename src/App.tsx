@@ -1,4 +1,4 @@
-import DelaunayVisualization from './DelaunayVisualization';
+import DelaunayVisualization from './ChiShapeVisualization';
 
 function App() {
   return (

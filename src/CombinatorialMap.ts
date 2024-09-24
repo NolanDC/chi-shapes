@@ -1,6 +1,6 @@
 import { Vector } from './vector';
 
-interface Dart {
+export interface Dart {
   index: number;
   origin: number;
   face: number;
