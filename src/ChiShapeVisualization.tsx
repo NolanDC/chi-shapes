@@ -14,6 +14,7 @@ const ChiShapeVisualization: React.FC = () => {
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null)
   const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null)
+  const [boundaryInfo, setBoundaryInfo] = useState<number>()
 
   const [chiShapeData, setChiShapeData] = useState<{
     chiShape: Vector[];
@@ -34,6 +35,7 @@ const ChiShapeVisualization: React.FC = () => {
     try {
       const newChiShapeData = calculateChiShape(points, lambda);
       setChiShapeData(newChiShapeData);
+      console.log(chiShapeData?.combinatorialMap)
       setLengthThresh(newChiShapeData.lengthThreshold);
     } catch (error) {
       console.error("Error calculating Chi Shape:", error);
@@ -106,6 +108,7 @@ const ChiShapeVisualization: React.FC = () => {
     const theta0 = combinatorialMap.theta0.get(dart);
     const theta1 = combinatorialMap.theta1.get(dart);
     const isBoundary = combinatorialMap.isBoundaryEdge(dart, combinatorialMap.theta0.get(dart)!);
+    const boundaryInfo = combinatorialMap.boundaryEdgeInfo(dart, combinatorialMap.theta0.get(dart)!)
     const revealed = combinatorialMap.reveal(dart);
 
     return (
@@ -114,6 +117,9 @@ const ChiShapeVisualization: React.FC = () => {
         <p>θ₀: {theta0 ? theta0.index : 'N/A'}</p>
         <p>θ₁: {theta1 ? theta1.index : 'N/A'}</p>
         <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
+        <p>Boundary Info</p>
+        <p>d1 {dart.index}: {boundaryInfo?.d1.index}, {boundaryInfo?.d1alt.index}</p>
+        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2.index}, {boundaryInfo?.d1alt.index}</p>
         <p>Revealed Dart: {revealed.index}</p>
       </div>
     );

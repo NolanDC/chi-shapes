@@ -85,8 +85,25 @@ export class CombinatorialMap {
     }
   }
 
+  boundaryEdgeInfo(d1: Dart, d2: Dart) {
+    if (!d1 || !d2 || d1.removed || d2.removed) return
+
+    const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
+    const theta0 = (x: Dart) => this.t0(x) ?? x;
+    const theta1 = (x: Dart) => this.t1(x) ?? x;
+    
+    const composition = compose(theta1, compose(theta0, compose(theta1, compose(theta0, compose(theta1, theta0)))));
+
+    return {
+      d1: composition(d1),
+      d2: composition(d2),
+      d1alt: theta0(theta1(theta0(theta1(theta0(theta1(d1)))))),
+      d2alt: theta0(theta1(theta0(theta1(theta0(theta1(d2))))))
+    }
+  }
+
   isBoundaryEdge(d1: Dart, d2: Dart): boolean {
-    if (d1.removed || d2.removed) return false;
+    if (!d1 || !d2 || d1.removed || d2.removed) return false
 
     const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
     const theta0 = (x: Dart) => this.theta0.get(x) ?? x;
@@ -94,7 +111,23 @@ export class CombinatorialMap {
     
     const composition = compose(theta1, compose(theta0, compose(theta1, compose(theta0, compose(theta1, theta0)))));
     
-    return !(composition(d1) === d1 && composition(d2) === d2);
+    return !(theta0(theta1(theta0(theta1(theta0(theta1(d1)))))) === d1 && theta0(theta1(theta0(theta1(theta0(theta1(d2)))))) === d2);
+  }
+
+  t1(d: Dart): Dart {
+    let result = this.theta1.get(d);
+    while (result && result.removed) {
+      result = this.theta1.get(result);
+    }
+    return result ?? d;
+  }
+
+  t0(d: Dart): Dart {
+    let result = this.theta0.get(d);
+    while (result && result.removed) {
+      result = this.theta0.get(result);
+    }
+    return result ?? d;
   }
 
   reveal(d: Dart): Dart {
@@ -148,9 +181,21 @@ export class CombinatorialMap {
   removeEdge(d1: Dart, d2: Dart) {
     const r1 = this.reveal(d1);
     const r2 = this.reveal(d2);
+  
+    console.log('setting theta1 for ', this.theta0.get(d1)!.index, r2)
+    console.log('setting theta1 for ', this.theta1.get(d2)!.index, r1)
 
-    this.setTheta1(this.theta1.get(d1)!, r2);
-    this.setTheta1(this.theta1.get(d2)!, r1);
+    // Do we need this? It seems wrong...
+    //this.setTheta1(this.theta1.get(d1)!, r2);
+    //this.setTheta1(this.theta1.get(d2)!, r1);
+    if (this.theta1.get(r1) === d1) {
+      console.log('filling hole')
+      this.theta1.set(r1, this.theta1.get(d1)!)
+    }
+    if (this.theta1.get(r2) === d2) {
+      console.log('filling hole')
+      this.theta1.set(r2, this.theta1.get(d2  )!)
+    }
 
     this.theta0.delete(d1);
     this.theta0.delete(d2);

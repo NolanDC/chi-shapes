@@ -38,10 +38,11 @@ export const DartView: React.FC<DartViewProps> = ({ dart, start, end, isHovered,
         x2={dartEndX}
         y2={dartEndY}
         stroke={stroke}
-        strokeWidth={isHovered ? 3 : 1.5}
+        strokeWidth={(isHovered || highlight != '') ? "14" : "2"}
+        
       />
       <polygon
-        points="0,-4 10,0 0,4"
+        points={(isHovered || highlight != '') ? "0,-12 16,0 0,12" : "0,-4 10,0 0,4"}
         fill={stroke}
         transform={`translate(${dartEndX},${dartEndY}) rotate(${angle})`}
       />
@@ -54,7 +55,7 @@ export const DartView: React.FC<DartViewProps> = ({ dart, start, end, isHovered,
         stroke="white"
         strokeWidth="2"
         paintOrder="stroke"
-        fontSize="12"
+        fontSize="14"
         fontWeight="bold"
       >
         {dart.index}{dart.removed ? 'r' : ''}
