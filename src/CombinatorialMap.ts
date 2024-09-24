@@ -1,5 +1,6 @@
+import { Vector } from './vector';
 
-export interface Dart {
+interface Dart {
   index: number;
   origin: number;
   face: number;
@@ -12,6 +13,34 @@ export class CombinatorialMap {
   theta0: Map<Dart, Dart> = new Map();
   theta1: Map<Dart, Dart> = new Map();
   dartMap: Map<string, Dart> = new Map();
+
+  constructor(triangles?: Uint32Array) {
+    if (triangles && triangles.length > 0) {
+      this.buildFromTriangles(triangles);
+    }
+  }
+
+  private buildFromTriangles(triangles: Uint32Array) {
+    for (let i = 0; i < triangles.length; i += 3) {
+      const face = i / 3;
+      const [a, b, c] = [triangles[i], triangles[i + 1], triangles[i + 2]];
+
+      const d1 = this.addDart(a, face, b);
+      const d2 = this.addDart(b, face, c);
+      const d3 = this.addDart(c, face, a);
+      const d4 = this.addDart(b, face, a);
+      const d5 = this.addDart(c, face, b);
+      const d6 = this.addDart(a, face, c);
+
+      this.setTheta0(d1, d4);
+      this.setTheta0(d2, d5);
+      this.setTheta0(d3, d6);
+
+      this.linkDarts(d1, d6);
+      this.linkDarts(d2, d4);
+      this.linkDarts(d3, d5);
+    }
+  }
 
   addDart(origin: number, face: number, next: number): Dart {
     const key = `${origin}-${next}`;
@@ -138,34 +167,4 @@ export class CombinatorialMap {
   revealedEdges(d1: Dart, d2: Dart): [Dart, Dart] {
     return [this.reveal(d1), this.reveal(d2)];
   }
-}
-
-export function buildCombinatorialMap(triangles: number[]): CombinatorialMap {
-  const map = new CombinatorialMap();
-
-  if (triangles.length === 0) {
-    return map;
-  }
-
-  for (let i = 0; i < triangles.length; i += 3) {
-    const face = i / 3;
-    const [a, b, c] = [triangles[i], triangles[i + 1], triangles[i + 2]];
-
-    const d1 = map.addDart(a, face, b);
-    const d2 = map.addDart(b, face, c);
-    const d3 = map.addDart(c, face, a);
-    const d4 = map.addDart(b, face, a);
-    const d5 = map.addDart(c, face, b);
-    const d6 = map.addDart(a, face, c);
-
-    map.setTheta0(d1, d4);
-    map.setTheta0(d2, d5);
-    map.setTheta0(d3, d6);
-
-    map.linkDarts(d1, d6);
-    map.linkDarts(d2, d4);
-    map.linkDarts(d3, d5);
-  }
-
-  return map;
 }

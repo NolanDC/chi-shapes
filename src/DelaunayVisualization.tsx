@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Vector } from './vector';
-import { calculateChiShape, CombinatorialMap, Edge } from './chiShape';
+import { calculateChiShape, Edge } from './chiShape';
+import { CombinatorialMap } from './CombinatorialMap';
 
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
