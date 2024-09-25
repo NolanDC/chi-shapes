@@ -1,5 +1,12 @@
 import { Vector } from './vector';
 
+
+export interface Triangle {
+  a: number;
+  b: number;
+  c: number;
+}
+
 export interface Dart {
   index: number;
   origin: number;
@@ -9,23 +16,25 @@ export interface Dart {
 }
 
 export class CombinatorialMap {
+  points: Vector[]
   darts: Dart[] = [];
   theta0: Map<Dart, Dart> = new Map();
   theta1: Map<Dart, Dart> = new Map();
   dartMap: Map<string, Dart> = new Map();
   vertexDarts: Map<number, Dart[]> = new Map();
 
-  constructor(triangles?: Uint32Array, points?: Vector[]) {
+
+  constructor(triangles: Triangle[], points: Vector[]) {
+    this.points = points
     if (triangles && triangles.length > 0 && points && points.length > 0) {
       this.buildFromTriangles(triangles, points);
     }
   }
 
-  private buildFromTriangles(triangles: Uint32Array, points: Vector[]) {
+  private buildFromTriangles(triangles: Triangle[], points: Vector[]) {
     // First pass: create all darts and set theta0
-    for (let i = 0; i < triangles.length; i += 3) {
-      const face = i / 3;
-      const [a, b, c] = [triangles[i], triangles[i + 1], triangles[i + 2]];
+    triangles.forEach((triangle, face) => {
+      const {a, b, c} = triangle
 
       const d1 = this.addDart(a, face, b);
       const d2 = this.addDart(b, face, c);
@@ -47,7 +56,7 @@ export class CombinatorialMap {
       this.addToVertexDarts(d4);
       this.addToVertexDarts(d5);
       this.addToVertexDarts(d6);
-    }
+    })
 
     // Second pass: set theta1 based on counterclockwise ordering
     for (const [vertex, darts] of this.vertexDarts.entries()) {
@@ -141,7 +150,11 @@ export class CombinatorialMap {
       d1alt: theta1(theta0(theta1(theta0(theta1(theta0(d1)))))),
       d2alt: theta1(theta0(theta1(theta0(theta1(theta0(d2))))))
     }
-  }  
+  }
+
+  edgeLength(d: Dart): number {
+    return Vector.dist(this.points[d.origin], this.points[d.next])
+  }
 
   isBoundaryEdge(d1: Dart, d2: Dart): boolean {
     if (!d1 || !d2 || d1.removed || d2.removed) return false;

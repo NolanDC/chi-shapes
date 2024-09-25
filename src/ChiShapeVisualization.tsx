@@ -3,9 +3,10 @@ import { Vector } from './vector';
 import { ChiShapeComputer } from './chiShape';
 import { CombinatorialMap, Dart } from './CombinatorialMap';
 import { DartView } from './DartView';
-import { Triangle } from './Triangle';
+import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
 import { Line } from './Line';
+import { Triangle } from './CombinatorialMap';
 
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
@@ -17,7 +18,7 @@ const ChiShapeVisualization: React.FC = () => {
   const [boundaryInfo, setBoundaryInfo] = useState<number>()
   const [chiShape, setChiShape] = useState<Vector[]>()
   const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
-  const [delaunayTriangles, setDelaunayTriangles] = useState<[number, number, number][]>()
+  const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>()
   const [size, setSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
@@ -135,6 +136,7 @@ const ChiShapeVisualization: React.FC = () => {
     return (
       <div>
         <p>Dart {hoveredDart.index}: from {dart.origin} to {dart.next}</p>
+        <p>Edge Length: {combinatorialMap.edgeLength(dart)}</p>
         <p>θ₀: {theta0 ? theta0.index : 'N/A'}</p>
         <p>θ₁: {theta1 ? theta1.index : 'N/A'}</p>
         <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
@@ -150,13 +152,13 @@ const ChiShapeVisualization: React.FC = () => {
     if (!delaunayTriangles) return null;
 
     return delaunayTriangles.map((triangle, index) => {
-      const [a, b, c] = triangle;
+      const {a, b, c} = triangle;
       if (!points[a] || !points[b] || !points[c]) {
         console.warn(`Invalid triangle: ${a}, ${b}, ${c}`);
         return null;
       }
       return (
-        <Triangle
+        <TriangleView
           key={`delaunay-${index}`}
           points={[points[a], points[b], points[c]]}
           stroke="rgba(0, 0, 255, 0.3)"

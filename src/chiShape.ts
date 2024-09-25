@@ -1,6 +1,7 @@
 import { Delaunay } from 'd3-delaunay';
 import { Vector } from './vector';
 import { CombinatorialMap } from './CombinatorialMap';
+import { Triangle } from './CombinatorialMap';
 
 interface Edge {
   a: number;
@@ -11,7 +12,7 @@ interface Edge {
 export class ChiShapeComputer {
   private points: Vector[];
   private lambda: number;
-  private delaunayTriangles: [number, number, number][];
+  private delaunayTriangles: Triangle[];
   private combinatorialMap: CombinatorialMap;
   private lengthThreshold: number;
   private boundaryEdges: Edge[];
@@ -22,7 +23,7 @@ export class ChiShapeComputer {
     this.points = points;
     this.lambda = lambda;
     this.delaunayTriangles = this.computeDelaunayTriangles();
-    this.combinatorialMap = new CombinatorialMap(new Uint32Array(this.delaunayTriangles.flat()), this.points);
+    this.combinatorialMap = new CombinatorialMap(this.delaunayTriangles, this.points);
     this.boundaryEdges = this.computeSortedBoundaryEdges();
     this.lengthThreshold = this.calculateLengthThreshold();
     this.removedEdges = [];
@@ -36,7 +37,7 @@ export class ChiShapeComputer {
     return this.computedChiShape;
   }
 
-  public getDelaunayTriangles(): [number, number, number][] {
+  public getDelaunayTriangles(): Triangle[] {
     return this.delaunayTriangles;
   }
 
@@ -52,18 +53,17 @@ export class ChiShapeComputer {
     return this.combinatorialMap;
   }
 
-  private computeDelaunayTriangles(): [number, number, number][] {
+  private computeDelaunayTriangles(): Triangle[] {
     const pointArrays = this.points.map(p => [p.x, p.y] as [number, number]);
     const delaunay = new Delaunay(pointArrays.flat());
-    const triangles: [number, number, number][] = [];
-    for (let i = 0; i < delaunay.triangles.length; i += 3) {
-      triangles.push([
-        delaunay.triangles[i],
-        delaunay.triangles[i + 1],
-        delaunay.triangles[i + 2]
-      ]);
-    }
-    return triangles;
+    return Array.from({ length: delaunay.triangles.length / 3 }, (_, i) => {
+        return {
+          a: delaunay.triangles[i*3], 
+          b: delaunay.triangles[i*3+1], 
+          c: delaunay.triangles[i*3+2]
+        }
+      }
+    );
   }
 
   private calculateLengthThreshold(): number {
@@ -79,9 +79,7 @@ export class ChiShapeComputer {
     const boundaryEdges: Set<string> = new Set();
     for (let i = 0; i < this.combinatorialMap.darts.length; i += 1) {
       const d1 = this.combinatorialMap.darts[i];
-      if (d1.removed) continue;
       const d2 = this.combinatorialMap.theta0.get(d1)!;
-      if (d2.removed) continue;
       if (this.combinatorialMap.isBoundaryEdge(d1, d2)) {
         const [minIndex, maxIndex] = [d1.origin, d2.origin].sort((a, b) => a - b);
         boundaryEdges.add(`${minIndex}-${maxIndex}`);
