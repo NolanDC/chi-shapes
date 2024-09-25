@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Vector } from './vector';
-import { calculateChiShape } from './chiShape';
+import { ChiShapeComputer } from './chiShape';
 import { CombinatorialMap, Dart } from './CombinatorialMap';
 import { DartView } from './DartView';
 import { Triangle } from './Triangle';
@@ -15,40 +15,38 @@ const ChiShapeVisualization: React.FC = () => {
   const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null)
   const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null)
   const [boundaryInfo, setBoundaryInfo] = useState<number>()
-
-  const [chiShapeData, setChiShapeData] = useState<{
-    chiShape: Vector[];
-    delaunayTriangles: [number, number, number][];
-    removedEdges: any[];
-    lengthThreshold: number;
-    combinatorialMap: CombinatorialMap;
-  } | null>(null);
+  const [chiShape, setChiShape] = useState<Vector[]>()
+  const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
+  const [delaunayTriangles, setDelaunayTriangles] = useState<[number, number, number][]>()
   const [size, setSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
   const updateChiShape = useCallback(() => {
     if (points.length < 3) {
-      setChiShapeData(null);
+      setChiShape(undefined);
+      setLengthThresh(0)
       return;
     }
     try {
-      const newChiShapeData = calculateChiShape(points, lambda);
-      setChiShapeData(newChiShapeData);
-      console.log(chiShapeData?.combinatorialMap)
-      setLengthThresh(newChiShapeData.lengthThreshold);
+      const chiShapeComputer = new ChiShapeComputer(points, lambda)
+      setChiShape(chiShapeComputer.chiShape())
+      setLengthThresh(chiShapeComputer.getLengthThreshold())
+      setCombinatorialMap(chiShapeComputer.getCombinatorialMap())
+      setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles())
+
     } catch (error) {
       console.error("Error calculating Chi Shape:", error);
-      setChiShapeData(null);
+      setChiShape(undefined);
     }
 
     console.log('points', points);
   }, [points, lambda]);
 
   useEffect(() => {
-    if (hoveredDart && chiShapeData?.combinatorialMap) {
-      setHoveredTheta0(chiShapeData.combinatorialMap.t0(hoveredDart) ?? null)
-      setHoveredTheta1(chiShapeData.combinatorialMap.t1(hoveredDart) ?? null)
+    if (hoveredDart && combinatorialMap) {
+      setHoveredTheta0(combinatorialMap.t0(hoveredDart) ?? null)
+      setHoveredTheta1(combinatorialMap.t1(hoveredDart) ?? null)
     } else {
       setHoveredTheta0(null)
       setHoveredTheta1(null)
@@ -123,9 +121,8 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const getDartInfo = () => {
-    if (hoveredDart === null || !chiShapeData) return null;
+    if (hoveredDart === null || !combinatorialMap) return null;
 
-    const { combinatorialMap } = chiShapeData;
     const dart = combinatorialMap.darts[hoveredDart.index];
     if (!dart) return null;
 
@@ -150,9 +147,9 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderDelaunayTriangles = () => {
-    if (!chiShapeData) return null;
+    if (!delaunayTriangles) return null;
 
-    return chiShapeData.delaunayTriangles.map((triangle, index) => {
+    return delaunayTriangles.map((triangle, index) => {
       const [a, b, c] = triangle;
       if (!points[a] || !points[b] || !points[c]) {
         console.warn(`Invalid triangle: ${a}, ${b}, ${c}`);
@@ -170,10 +167,10 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderChiShape = () => {
-    if (!chiShapeData) return null;
+    if (!chiShape) return null;
 
-    const validPoints = chiShapeData.chiShape.filter(p => p !== undefined);
-    if (validPoints.length !== chiShapeData.chiShape.length) {
+    const validPoints = chiShape.filter(p => p !== undefined);
+    if (validPoints.length !== chiShape.length) {
       console.warn("Some chi shape points are undefined");
     }
 
@@ -188,9 +185,9 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderDarts = () => {
-    if (!chiShapeData) return null;
+    if (!combinatorialMap) return null;
 
-    return chiShapeData.combinatorialMap.darts.map((dart) => {
+    return combinatorialMap.darts.map((dart) => {
       const start = points[dart.origin];
       const end = points[dart.next];
       
@@ -199,7 +196,7 @@ const ChiShapeVisualization: React.FC = () => {
         return null;
       }
 
-      const theta1Dart = chiShapeData.combinatorialMap.t1(dart);
+      const theta1Dart = combinatorialMap.t1(dart);
       let theta1End = null
       try {
         theta1End = theta1Dart ? new Vector(

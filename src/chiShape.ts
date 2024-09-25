@@ -2,159 +2,160 @@ import { Delaunay } from 'd3-delaunay';
 import { Vector } from './vector';
 import { CombinatorialMap } from './CombinatorialMap';
 
-export interface Edge {
-  start: Vector,
-  end: Vector,
-  isRegular: boolean,
-  exceedsLength: boolean
+interface Edge {
+  a: number;
+  b: number;
+  length: number;
 }
 
-export interface ChiShapeResult {
-  chiShape: Vector[];
-  delaunayTriangles: [number, number, number][];
-  removedEdges: Edge[];
-  lengthThreshold: number;
-  combinatorialMap: CombinatorialMap;
-}
+export class ChiShapeComputer {
+  private points: Vector[];
+  private lambda: number;
+  private delaunayTriangles: [number, number, number][];
+  private combinatorialMap: CombinatorialMap;
+  private lengthThreshold: number;
+  private boundaryEdges: Edge[];
+  private removedEdges: Edge[];
+  private computedChiShape: Vector[] | null;
 
-function sortEdges(edges: Set<string>, points: Vector[]): Vector[] {
-  if (edges.size === 0) return [];
+  constructor(points: Vector[], lambda: number) {
+    this.points = points;
+    this.lambda = lambda;
+    this.delaunayTriangles = this.computeDelaunayTriangles();
+    this.combinatorialMap = new CombinatorialMap(new Uint32Array(this.delaunayTriangles.flat()), this.points);
+    this.boundaryEdges = this.computeSortedBoundaryEdges();
+    this.lengthThreshold = this.calculateLengthThreshold();
+    this.removedEdges = [];
+    this.computedChiShape = null;
+  }
 
-  const edgeList = Array.from(edges).map(edge => edge.split('-').map(Number));
-  const sortedPoints: number[] = [];
-  const used = new Set<string>();
-
-  sortedPoints.push(edgeList[0][0], edgeList[0][1]);
-  used.add(edgeList[0].join('-'));
-
-  while (used.size < edges.size) {
-    const last = sortedPoints[sortedPoints.length - 1];
-    const nextEdge = edgeList.find(edge => 
-      !used.has(edge.join('-')) && (edge[0] === last || edge[1] === last)
-    );
-
-    if (!nextEdge) break;
-
-    used.add(nextEdge.join('-'));
-    if (nextEdge[0] === last) {
-      sortedPoints.push(nextEdge[1]);
-    } else {
-      sortedPoints.push(nextEdge[0]);
+  public chiShape(): Vector[] {
+    if (this.computedChiShape === null) {
+      this.computedChiShape = this.computeChiShape();
     }
+    return this.computedChiShape;
   }
 
-  return sortedPoints.map(i => points[i]);
-}
-
-export function calculateChiShape(points: Vector[], lambda: number): ChiShapeResult {
-  if (points.length < 3) {
-    return {
-      chiShape: points,
-      delaunayTriangles: [],
-      removedEdges: [],
-      lengthThreshold: 0,
-      combinatorialMap: new CombinatorialMap()
-    };
+  public getDelaunayTriangles(): [number, number, number][] {
+    return this.delaunayTriangles;
   }
 
-  const pointArrays = points.map(p => [p.x, p.y] as [number, number]);
-  const delaunay = new Delaunay(pointArrays.flat());
-  const map = new CombinatorialMap(delaunay.triangles, points);
+  public getRemovedEdges(): Edge[] {
+    return this.removedEdges;
+  }
 
-  const boundaryEdges: Set<string> = new Set();
-  for (let i = 0; i < map.darts.length; i += 1) {
-    const d1 = map.darts[i];
-    if (d1.removed) continue;
-    const d2 = map.theta0.get(d1)!;
-    if (d2.removed) continue;
-    if (map.isBoundaryEdge(d1, d2)) {
-      const [minIndex, maxIndex] = [d1.origin, d2.origin].sort((a, b) => a - b);
-      boundaryEdges.add(`${minIndex}-${maxIndex}`);
+  public getLengthThreshold(): number {
+    return this.lengthThreshold;
+  }
+
+  public getCombinatorialMap(): CombinatorialMap {
+    return this.combinatorialMap;
+  }
+
+  private computeDelaunayTriangles(): [number, number, number][] {
+    const pointArrays = this.points.map(p => [p.x, p.y] as [number, number]);
+    const delaunay = new Delaunay(pointArrays.flat());
+    const triangles: [number, number, number][] = [];
+    for (let i = 0; i < delaunay.triangles.length; i += 3) {
+      triangles.push([
+        delaunay.triangles[i],
+        delaunay.triangles[i + 1],
+        delaunay.triangles[i + 2]
+      ]);
     }
+    return triangles;
   }
 
-  const edgeArray = Array.from(boundaryEdges).map(edge => {
-    const [a, b] = edge.split('-').map(Number);
-    return { a, b, length: Vector.dist(points[a], points[b]) };
-  });
-
-  if (edgeArray.length === 0) {
-    return {
-      chiShape: points,
-      delaunayTriangles: [],
-      removedEdges: [],
-      lengthThreshold: 0,
-      combinatorialMap: map
-    };
+  private calculateLengthThreshold(): number {
+    if (this.boundaryEdges.length === 0) {
+      return 0;
+    }
+    const maxLength = this.boundaryEdges[0].length;
+    const minLength = this.boundaryEdges[this.boundaryEdges.length - 1].length;
+    return minLength + this.lambda * (maxLength - minLength);
   }
 
-  edgeArray.sort((e1, e2) => e2.length - e1.length);
-
-  const maxLength = edgeArray[0].length;
-  const minLength = edgeArray[edgeArray.length - 1].length;
-  
-  const lengthThreshold = minLength + lambda * (maxLength - minLength);
-
-  const chiShape = new Set(edgeArray.map(e => `${e.a}-${e.b}`));
-  const removedEdges: Edge[] = [];
-  
-  for (let i = 0; i < edgeArray.length; i++) {
-    const { a, b, length } = edgeArray[i];
-    const d1 = map.dartMap.get(`${a}-${b}`);
-    const d2 = map.dartMap.get(`${b}-${a}`);
-    
-    if (!d1 || !d2 || d1.removed || d2.removed) continue;
-    
-    const isRegular = map.isRegularRemoval(d1, d2);
-    const exceedsLength = length > lengthThreshold;
-
-    if (isRegular && exceedsLength) {
-      const [r1, r2] = map.revealedEdges(d1, d2);
-
-      map.removeEdge(d1, d2);
-      removedEdges.push({
-        start: points[a],
-        end: points[b],
-        isRegular: true,
-        exceedsLength: true
-      });
-
-      chiShape.delete(`${a}-${b}`);
-
-      const newEdges = [
-        { a: r1.origin, b: r1.next, length: Vector.dist(points[r1.origin], points[r1.next]) },
-        { a: r2.origin, b: r2.next, length: Vector.dist(points[r2.origin], points[r2.next]) }
-      ];
-
-      for (const newEdge of newEdges) {
-        chiShape.add(`${newEdge.a}-${newEdge.b}`);
-        const insertIndex = edgeArray.findIndex(e => e.length <= newEdge.length);
-        if (insertIndex === -1) {
-          edgeArray.push(newEdge);
-        } else {
-          edgeArray.splice(insertIndex, 0, newEdge);
-        }
+  private computeSortedBoundaryEdges(): Edge[] {
+    const boundaryEdges: Set<string> = new Set();
+    for (let i = 0; i < this.combinatorialMap.darts.length; i += 1) {
+      const d1 = this.combinatorialMap.darts[i];
+      if (d1.removed) continue;
+      const d2 = this.combinatorialMap.theta0.get(d1)!;
+      if (d2.removed) continue;
+      if (this.combinatorialMap.isBoundaryEdge(d1, d2)) {
+        const [minIndex, maxIndex] = [d1.origin, d2.origin].sort((a, b) => a - b);
+        boundaryEdges.add(`${minIndex}-${maxIndex}`);
       }
     }
+
+    const edgeArray = Array.from(boundaryEdges).map(edge => {
+      const [a, b] = edge.split('-').map(Number);
+      return { a, b, length: Vector.dist(this.points[a], this.points[b]) };
+    });
+
+    edgeArray.sort((e1, e2) => e2.length - e1.length);
+    return edgeArray;
   }
+
+  private computeChiShape(): Vector[] {
+    const chiShape = new Set(this.boundaryEdges.map(e => `${e.a}-${e.b}`));
     
+    for (const edge of this.boundaryEdges) {
+      const { a, b, length } = edge;
+      const d1 = this.combinatorialMap.dartMap.get(`${a}-${b}`);
+      const d2 = this.combinatorialMap.dartMap.get(`${b}-${a}`);
+      
+      if (!d1 || !d2 || d1.removed || d2.removed) continue;
+      
+      const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
+      const exceedsLength = length > this.lengthThreshold;
 
-  const delaunayTriangles: [number, number, number][] = [];
-  for (let i = 0; i < delaunay.triangles.length; i += 3) {
-    delaunayTriangles.push([
-      delaunay.triangles[i],
-      delaunay.triangles[i + 1],
-      delaunay.triangles[i + 2]
-    ]);
+      if (isRegular && exceedsLength) {
+        const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
+
+        this.combinatorialMap.removeEdge(d1, d2);
+        this.removedEdges.push({
+          a: a,
+          b: b,
+          length: length
+        });
+
+        chiShape.delete(`${a}-${b}`);
+
+        chiShape.add(`${r1.origin}-${r1.next}`);
+        chiShape.add(`${r2.origin}-${r2.next}`);
+      }
+    }
+
+    return this.sortEdges(chiShape);
   }
 
-  const sortedChiShape = sortEdges(chiShape, points);
+  private sortEdges(edges: Set<string>): Vector[] {
+    if (edges.size === 0) return [];
 
-  return {
-    chiShape: sortedChiShape,
-    delaunayTriangles,
-    removedEdges,
-    lengthThreshold,
-    combinatorialMap: map
-  };
+    const edgeList = Array.from(edges).map(edge => edge.split('-').map(Number));
+    const sortedPoints: number[] = [];
+    const used = new Set<string>();
+
+    sortedPoints.push(edgeList[0][0], edgeList[0][1]);
+    used.add(edgeList[0].join('-'));
+
+    while (used.size < edges.size) {
+      const last = sortedPoints[sortedPoints.length - 1];
+      const nextEdge = edgeList.find(edge => 
+        !used.has(edge.join('-')) && (edge[0] === last || edge[1] === last)
+      );
+
+      if (!nextEdge) break;
+
+      used.add(nextEdge.join('-'));
+      if (nextEdge[0] === last) {
+        sortedPoints.push(nextEdge[1]);
+      } else {
+        sortedPoints.push(nextEdge[0]);
+      }
+    }
+
+    return sortedPoints.map(i => this.points[i]);
+  }
 }

@@ -85,7 +85,7 @@ export const DartView: React.FC<DartViewProps> = ({
       >
         {dart.index}{dart.removed ? 'r' : ''}
       </text>
-      {renderTheta1Line()}
+      {/*renderTheta1Line()*/}
     </g>
   );
 };
