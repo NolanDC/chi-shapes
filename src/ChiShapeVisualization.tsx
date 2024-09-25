@@ -41,12 +41,14 @@ const ChiShapeVisualization: React.FC = () => {
       console.error("Error calculating Chi Shape:", error);
       setChiShapeData(null);
     }
+
+    console.log('points', points);
   }, [points, lambda]);
 
   useEffect(() => {
     if (hoveredDart && chiShapeData?.combinatorialMap) {
-      setHoveredTheta0(chiShapeData.combinatorialMap.theta0.get(hoveredDart) ?? null)
-      setHoveredTheta1(chiShapeData.combinatorialMap.theta1.get(hoveredDart) ?? null)
+      setHoveredTheta0(chiShapeData.combinatorialMap.t0(hoveredDart) ?? null)
+      setHoveredTheta1(chiShapeData.combinatorialMap.t1(hoveredDart) ?? null)
     } else {
       setHoveredTheta0(null)
       setHoveredTheta1(null)
@@ -57,9 +59,31 @@ const ChiShapeVisualization: React.FC = () => {
     const generateRandomPoints = () => {
       const width = window.innerWidth - INFO_COLUMN_WIDTH;
       const height = window.innerHeight;
-      return Array.from({ length: 4 }, () => 
+
+      // broken theta1s
+      const vectorArray = [
+        new Vector(344, 553),
+        new Vector(136, 477),
+        new Vector(235, 425),
+        new Vector(539, 574),
+        new Vector(598, 606),
+        new Vector(700, 530),
+        new Vector(550, 749),
+        new Vector(421, 726),
+        new Vector(169, 784)
+    ];
+    return vectorArray;
+
+      return [
+        new Vector(224 * 2, 323 * 2),
+        new Vector(164 * 2, 302 * 2),  // {x: 164, y: 302}
+        new Vector(216 * 2, 165 * 2),
+        new Vector(62 * 2, 407 * 2),
+        new Vector(273 * 2, 375 * 2)
+      ]
+      /*Array.from({ length: 4 }, () => 
         new Vector(Math.random() * width, Math.random() * height)
-      );
+      );*/
     };
 
     setPoints(generateRandomPoints());
@@ -105,11 +129,11 @@ const ChiShapeVisualization: React.FC = () => {
     const dart = combinatorialMap.darts[hoveredDart.index];
     if (!dart) return null;
 
-    const theta0 = combinatorialMap.theta0.get(dart);
-    const theta1 = combinatorialMap.theta1.get(dart);
+    const theta0 = combinatorialMap.t0(dart);
+    const theta1 = combinatorialMap.t1(dart);
     const isBoundary = combinatorialMap.isBoundaryEdge(dart, combinatorialMap.theta0.get(dart)!);
     const boundaryInfo = combinatorialMap.boundaryEdgeInfo(dart, combinatorialMap.theta0.get(dart)!)
-    const revealed = combinatorialMap.reveal(dart);
+    //const revealed = combinatorialMap.reveal(dart);
 
     return (
       <div>
@@ -119,8 +143,8 @@ const ChiShapeVisualization: React.FC = () => {
         <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
         <p>Boundary Info</p>
         <p>d1 {dart.index}: {boundaryInfo?.d1.index}, {boundaryInfo?.d1alt.index}</p>
-        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2.index}, {boundaryInfo?.d1alt.index}</p>
-        <p>Revealed Dart: {revealed.index}</p>
+        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2.index}, {boundaryInfo?.d2alt.index}</p>
+        <p>Revealed Dart: {/*revealed.index*/}</p>
       </div>
     );
   };
@@ -175,6 +199,21 @@ const ChiShapeVisualization: React.FC = () => {
         return null;
       }
 
+      const theta1Dart = chiShapeData.combinatorialMap.t1(dart);
+      let theta1End = null
+      try {
+        theta1End = theta1Dart ? new Vector(
+          points[theta1Dart.origin].x + (points[theta1Dart.next].x - points[theta1Dart.origin].x) * 0.3,
+          points[theta1Dart.origin].y + (points[theta1Dart.next].y - points[theta1Dart.origin].y) * 0.3
+        ) : null;
+      } catch (e) {
+        console.log(e)
+        console.log('theta1end', theta1End)
+        console.log('theta1dart', theta1Dart)
+        console.log('theta1dart start', points[theta1Dart.origin])
+        console.log('theta1dart end', points[theta1Dart.next])
+      }
+
 
       return (
         <DartView
@@ -182,6 +221,7 @@ const ChiShapeVisualization: React.FC = () => {
           dart={dart}
           start={start}
           end={end}
+          theta1End={theta1End}
           isHovered={hoveredDart === dart}
           highlight={hoveredTheta0 === dart ? 'green' : ((hoveredTheta1 === dart) ? 'blue' : '') }
           onMouseEnter={() => setHoveredDart(dart)}

@@ -97,7 +97,7 @@ export function calculateChiShape(points: Vector[], lambda: number): ChiShapeRes
 
   const chiShape = new Set(edgeArray.map(e => `${e.a}-${e.b}`));
   const removedEdges: Edge[] = [];
-
+  /*
   for (let i = 0; i < edgeArray.length; i++) {
     const { a, b, length } = edgeArray[i];
     const d1 = map.dartMap.get(`${a}-${b}`);
@@ -137,6 +137,7 @@ export function calculateChiShape(points: Vector[], lambda: number): ChiShapeRes
       }
     }
   }
+    */
 
   const delaunayTriangles: [number, number, number][] = [];
   for (let i = 0; i < delaunay.triangles.length; i += 3) {
