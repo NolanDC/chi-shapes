@@ -210,8 +210,11 @@ const ChiShapeVisualization: React.FC = () => {
         console.log(e)
         console.log('theta1end', theta1End)
         console.log('theta1dart', theta1Dart)
-        console.log('theta1dart start', points[theta1Dart.origin])
-        console.log('theta1dart end', points[theta1Dart.next])
+        if (theta1Dart) {
+          console.log('theta1dart start', points[theta1Dart.origin])
+          console.log('theta1dart end', points[theta1Dart.next])
+        }
+        
       }
 
 

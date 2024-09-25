@@ -59,7 +59,7 @@ export function calculateChiShape(points: Vector[], lambda: number): ChiShapeRes
 
   const pointArrays = points.map(p => [p.x, p.y] as [number, number]);
   const delaunay = new Delaunay(pointArrays.flat());
-  const map = new CombinatorialMap(delaunay.triangles);
+  const map = new CombinatorialMap(delaunay.triangles, points);
 
   const boundaryEdges: Set<string> = new Set();
   for (let i = 0; i < map.darts.length; i += 1) {
@@ -97,7 +97,7 @@ export function calculateChiShape(points: Vector[], lambda: number): ChiShapeRes
 
   const chiShape = new Set(edgeArray.map(e => `${e.a}-${e.b}`));
   const removedEdges: Edge[] = [];
-  /*
+  
   for (let i = 0; i < edgeArray.length; i++) {
     const { a, b, length } = edgeArray[i];
     const d1 = map.dartMap.get(`${a}-${b}`);
@@ -137,7 +137,7 @@ export function calculateChiShape(points: Vector[], lambda: number): ChiShapeRes
       }
     }
   }
-    */
+    
 
   const delaunayTriangles: [number, number, number][] = [];
   for (let i = 0; i < delaunay.triangles.length; i += 3) {

@@ -13,15 +13,16 @@ export class CombinatorialMap {
   theta0: Map<Dart, Dart> = new Map();
   theta1: Map<Dart, Dart> = new Map();
   dartMap: Map<string, Dart> = new Map();
+  vertexDarts: Map<number, Dart[]> = new Map();
 
-  constructor(triangles?: Uint32Array) {
-    if (triangles && triangles.length > 0) {
-      this.buildFromTriangles(triangles);
+  constructor(triangles?: Uint32Array, points?: Vector[]) {
+    if (triangles && triangles.length > 0 && points && points.length > 0) {
+      this.buildFromTriangles(triangles, points);
     }
   }
 
-  private buildFromTriangles(triangles: Uint32Array) {
-    
+  private buildFromTriangles(triangles: Uint32Array, points: Vector[]) {
+    // First pass: create all darts and set theta0
     for (let i = 0; i < triangles.length; i += 3) {
       const face = i / 3;
       const [a, b, c] = [triangles[i], triangles[i + 1], triangles[i + 2]];
@@ -29,113 +30,104 @@ export class CombinatorialMap {
       const d1 = this.addDart(a, face, b);
       const d2 = this.addDart(b, face, c);
       const d3 = this.addDart(c, face, a);
-      const d4 = this.addDart(b, face, a);
-      const d5 = this.addDart(c, face, b);
-      const d6 = this.addDart(a, face, c);
 
+      const d4 = this.addDart(b, face, a)
+      const d5 = this.addDart(c, face, b)
+      const d6 = this.addDart(a, face, c)
+
+      // Set theta0 (opposite darts)
       this.setTheta0(d1, d4);
       this.setTheta0(d2, d5);
       this.setTheta0(d3, d6);
-      //console.log('-------------------')
-      //console.log('1 to 6')
-      this.linkDarts(d1, d6);
-      //console.log('2 to 4')
-      this.linkDarts(d2, d4);
-      //console.log('3 to 5')
-      this.linkDarts(d3, d5);
+
+      // Add darts to vertexDarts
+      this.addToVertexDarts(d1);
+      this.addToVertexDarts(d2);
+      this.addToVertexDarts(d3);
+      this.addToVertexDarts(d4);
+      this.addToVertexDarts(d5);
+      this.addToVertexDarts(d6);
     }
-    console.log('done rebuilding');
+
+    // Second pass: set theta1 based on counterclockwise ordering
+    for (const [vertex, darts] of this.vertexDarts.entries()) {
+      this.setTheta1ForVertex(vertex, darts, points);
+    }
   }
 
-  addDart(origin: number, face: number, next: number): Dart {
+  private addDart(origin: number, face: number, next: number): Dart {
     const key = `${origin}-${next}`;
     if (this.dartMap.has(key)) {
       return this.dartMap.get(key)!;
     }
-    const dart: Dart = { index: this.darts.length, origin, face, next };
+    const dart: Dart = { index: this.darts.length, origin, face, next, removed: false };
     this.darts.push(dart);
     this.dartMap.set(key, dart);
     return dart;
   }
 
-  setTheta0(d1: Dart, d2: Dart) {
+  private setTheta0(d1: Dart, d2: Dart) {
     this.theta0.set(d1, d2);
     this.theta0.set(d2, d1);
   }
 
-  setTheta1(d1: Dart, d2: Dart) {
-    //console.log('setting theta1 for ', d1.index, ' to ', d2.index)
+  private addToVertexDarts(dart: Dart) {
+    if (!this.vertexDarts.has(dart.origin)) {
+      this.vertexDarts.set(dart.origin, []);
+    }
+    this.vertexDarts.get(dart.origin)!.push(dart);
+  }
+
+  private setTheta1ForVertex(vertex: number, darts: Dart[], points: Vector[]) {
+    const center = points[vertex];
+    darts.sort((a, b) => {
+      const aNext = points[a.next];
+      const bNext = points[b.next];
+      return this.counterClockwiseCompare(center, aNext, bNext);
+    });
+
+    for (let i = 0; i < darts.length; i++) {
+      this.setTheta1(darts[i], darts[(i + 1) % darts.length]);
+    }
+  }
+
+  private counterClockwiseCompare(center: Vector, a: Vector, b: Vector): number {
+    const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+    const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+    return angleB - angleA;
+  }
+
+  private setTheta1(d1: Dart, d2: Dart) {
     this.theta1.set(d1, d2);
   }
 
-  linkDarts(d1: Dart, d2: Dart) {
-    if (!this.theta1.has(d1) && !this.theta1.has(d2)) {
-      console.log('completely new link from ', d1.index, ' to ', d2.index, ' and back')
-      this.setTheta1(d1, d2);
-      this.setTheta1(d2, d1);
-    } else if (this.theta1.has(d1) && !this.theta1.has(d2)) {
-      const next = this.t1(d1, false)!;
-      console.log('post inserting ', d2.index, ' between ', d1.index, ' and ', next.index)
-      this.setTheta1(d1, d2);
-      this.setTheta1(d2, next);
-    } else if (!this.theta1.has(d1) && this.theta1.has(d2)) {
-      let prev = d2;
+  t0(d: Dart | undefined): Dart | undefined {
+    if (!d) return undefined
+    const result = this.theta0.get(d);
+    return result && !result.removed ? result : undefined;
+  }
 
-      const seenDarts = new Set<Dart>();
-      let failed = false
-      //console.log('gonna loop');
-      // TODO: Infinite loop here!
-      while (this.t1(prev, false) !== d2) {
-        prev = this.t1(prev, false)!;
-        console.log('prev', prev);
-  
-        if (seenDarts.has(prev)) {
-          console.error('Infinite loop detected in theta1 traversal');
-          console.log('dart to attach:', d1);
-          console.log('Target dart (d2):', d2);
-          console.log('prev dart:', prev);
-          
-          console.log('Theta1 map:', this.theta1);
-          console.log('All darts:', this.darts);
-          console.log('Seen darts:', Array.from(seenDarts));
-          failed = true
-          break;
-        }
-  
-        seenDarts.add(prev);
+  t1(d: Dart | undefined, skipRemoved: boolean = true): Dart | undefined {
+    if (!d) return undefined
+    let result = this.theta1.get(d);
+    if (skipRemoved) {
+      while (result && result.removed) {
+        result = this.theta1.get(result);
       }
-     // console.log('done looping');
+    }
+    return result;
+  }
 
-      //prev {index: 18, origin: 14, face: 3, next: 13}
-      //prev {index: 16, origin: 14, face: 3, next: 9}
-      console.log('prev inserting ', d1.index, ' between ', prev.index, ' and ', d2.index)
-
-      if (!failed) {
-        this.setTheta1(prev, d1);
-        this.setTheta1(d1, d2);
-      }
-
+  reveal(d: Dart): Dart {
+    if (this.t0(this.t1(this.t0(this.t1(this.t0(this.t1(d)))!)!)!)! === d) {
+      return this.t1(d)!;
     } else {
-
-      // TODO: Figure this out, what exactly is happening here?
-      // Seems like this is kind of like a "correction" as two existing darts are encountered in a new triangle.  Previously 
-      // d1 would be pointing to it's clockwise counterpart, and this corrects it since with the addition of the new 
-      // dart d2, it's no longer clockwise. There's no need to change d2's theta1 since it's already set properly to d1
-      console.log('doing something to  ', d1.index, ' and ', d2.index, ' not sure what tho')
-      const next1 = this.t1(d1, false)!;
-      console.log('theta1 of ', d1.index, 'is ', next1.index)
-      
-      
-      const next2 = this.t1(d2, false)!;
-      console.log('theta1 of d2', d2.index, 'is ', next2.index)
-      this.setTheta1(d1, d2)
-      //this.setTheta1(d1, next1);
-      //this.setTheta1(d2, next2);
+      return this.t0(this.t1(this.t0(this.t1(this.t0(d)!)!)!)!)!;
     }
   }
 
   boundaryEdgeInfo(d1: Dart, d2: Dart) {
-    if (!d1 || !d2 || d1.removed || d2.removed) return
+    if (!d1 || !d2 || d1.removed || d2.removed) return undefined;
 
     const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
     const theta0 = (x: Dart) => this.t0(x) ?? x;
@@ -149,10 +141,10 @@ export class CombinatorialMap {
       d1alt: theta1(theta0(theta1(theta0(theta1(theta0(d1)))))),
       d2alt: theta1(theta0(theta1(theta0(theta1(theta0(d2))))))
     }
-  }
+  }  
 
   isBoundaryEdge(d1: Dart, d2: Dart): boolean {
-    if (!d1 || !d2 || d1.removed || d2.removed) return false
+    if (!d1 || !d2 || d1.removed || d2.removed) return false;
 
     const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
     const theta0 = (x: Dart) => this.t0(x) ?? x;
@@ -160,36 +152,7 @@ export class CombinatorialMap {
     
     const composition = compose(theta1, compose(theta0, compose(theta1, compose(theta0, compose(theta1, theta0)))));
     
-    return !(theta1(theta0(theta1(theta0(theta1(theta0(d1)))))) === d1 && theta1(theta0(theta1(theta0(theta1(theta0(d2)))))) === d2);
-  }
-
-  t1(d: Dart, r: boolean = true): Dart {
-    let result = this.theta1.get(d);
-    
-    if (r) {
-      while (result && result.removed) {
-        result = this.theta1.get(result);
-      }
-    }
-
-
-    return result ?? d;
-  }
-
-  t0(d: Dart): Dart {
-    let result = this.theta0.get(d);
-
-    return result ?? d;
-  }
-
-  reveal(d: Dart): Dart {
-    //console.log('theta1', this.theta1)
-
-    if (this.t0(this.t1(this.t0(this.t1(this.t0(this.t1(d)))))) === d) {
-      return this.t1(d);
-    } else {
-      return this.t0(this.t1(this.t0(this.t1(this.t0(d)))));
-    }
+    return !(composition(d1) === d1 && composition(d2) === d2);
   }
 
   isBoundaryVertex(vertexIndex: number): boolean {
@@ -198,7 +161,7 @@ export class CombinatorialMap {
     
     let current = dart;
     do {
-      if (this.isBoundaryEdge(current, this.theta0.get(current)!)) {
+      if (this.isBoundaryEdge(current, this.t0(current)!)) {
         return true;
       }
       current = this.t1(this.t1(current)!)!;
@@ -213,33 +176,11 @@ export class CombinatorialMap {
     }
 
     const revealedDart = this.reveal(d1);
-    const exposedVertex = this.theta0.get(revealedDart)!.origin;
+    const exposedVertex = this.t0(revealedDart)!.origin;
     return !this.isBoundaryVertex(exposedVertex);
   }
 
   removeEdge(d1: Dart, d2: Dart) {
-    const r1 = this.reveal(d1);
-    const r2 = this.reveal(d2);
-
-    // Do we need this? It seems wrong...
-    //this.setTheta1(this.theta1.get(d1)!, r2);
-    //this.setTheta1(this.theta1.get(d2)!, r1);
-    /*
-    if (this.theta1.get(r1) === d1) {
-      console.log('filling hole')
-      this.theta1.set(r1, this.theta1.get(d1)!)
-    }
-    if (this.theta1.get(r2) === d2) {
-      console.log('filling hole')
-      this.theta1.set(r2, this.theta1.get(d2  )!)
-    }
-      */
-
-    //this.theta0.delete(d1);
-    //this.theta0.delete(d2);
-    //this.theta1.delete(d1);
-    //this.theta1.delete(d2);
-
     d1.removed = true;
     d2.removed = true;
 
