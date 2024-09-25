@@ -135,6 +135,22 @@ export class CombinatorialMap {
     }
   }
 
+  public boundaryEdges(): [Dart, Dart][] {
+    const edgeMap = new Map<string, [Dart, Dart]>();
+
+    for (const dart of this.darts) {
+      const theta0Dart = this.theta0.get(dart)!;
+      if (this.isBoundaryEdge(dart, theta0Dart)) {
+        const [d1, d2] = dart.index < theta0Dart.index ? [dart, theta0Dart] : [theta0Dart, dart];
+        const key = `${d1.index}-${d2.index}`;
+        edgeMap.set(key, [d1, d2]);
+      }
+    }
+
+    return Array.from(edgeMap.values());
+  }
+
+
   boundaryEdgeInfo(d1: Dart, d2: Dart) {
     if (!d1 || !d2 || d1.removed || d2.removed) return undefined;
 

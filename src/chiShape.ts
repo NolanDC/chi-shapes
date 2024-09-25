@@ -86,9 +86,11 @@ export class ChiShapeComputer {
       }
     }
 
-    const edgeArray = Array.from(boundaryEdges).map(edge => {
-      const [a, b] = edge.split('-').map(Number);
-      return { a, b, length: Vector.dist(this.points[a], this.points[b]) };
+    const edges = this.combinatorialMap.boundaryEdges()
+
+    const edgeArray = Array.from(edges).map(edge => {
+      const [a, b] = edge;
+      return { a: a.origin, b: b.origin, length: Vector.dist(this.points[a.origin], this.points[b.origin]) };
     });
 
     edgeArray.sort((e1, e2) => e2.length - e1.length);
@@ -99,18 +101,18 @@ export class ChiShapeComputer {
     const chiShape = new Set(this.boundaryEdges.map(e => `${e.a}-${e.b}`));
     
     for (const edge of this.boundaryEdges) {
+      
       const { a, b, length } = edge;
       const d1 = this.combinatorialMap.dartMap.get(`${a}-${b}`);
       const d2 = this.combinatorialMap.dartMap.get(`${b}-${a}`);
-      
       if (!d1 || !d2 || d1.removed || d2.removed) continue;
       
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
       const exceedsLength = length > this.lengthThreshold;
 
       if (isRegular && exceedsLength) {
+        
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
-
         this.combinatorialMap.removeEdge(d1, d2);
         this.removedEdges.push({
           a: a,
