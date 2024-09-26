@@ -26,19 +26,14 @@ const ChiShapeVisualization: React.FC = () => {
   const INFO_COLUMN_WIDTH = 250;
 
   const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda])
-  const currentStep = useMemo(() => steps[stepIndex], [stepIndex])
-
-  useEffect(() => {
-    console.log(steps)
-    setStepIndex(0)
-    console.log('first step', steps[0])
-  }, [steps])
+  const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex])
 
   useEffect(() => {
     if (points.length < 3) {
       setLengthThresh(0);
       setCombinatorialMap(undefined);
       setDelaunayTriangles(undefined);
+      setStepIndex(0)
       return;
     }
 
@@ -48,6 +43,7 @@ const ChiShapeVisualization: React.FC = () => {
       setLengthThresh(chiShapeComputer.getLengthThreshold());
       setCombinatorialMap(chiShapeComputer.getCombinatorialMap());
       setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles());
+      setStepIndex(steps.length-1)
     } catch (error) {
       console.error("Error calculating Chi Shape:", error);
     }
@@ -181,6 +177,8 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderChiShape = () => {
+    console.log('re-rendering chi shape with current shape', currentStep?.currentChiShape)
+    console.log('re-rendering chi shape with # of points: ', currentStep?.currentChiShape.length)
     const shape = currentStep?.currentChiShape
     if (!shape) return
 
