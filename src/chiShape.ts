@@ -1,11 +1,10 @@
 import { Delaunay } from 'd3-delaunay';
 import { Vector } from './vector';
-import { CombinatorialMap } from './CombinatorialMap';
-import { Triangle } from './CombinatorialMap';
+import { CombinatorialMap, Dart, Triangle } from './CombinatorialMap';
 
-interface Edge {
-  a: number;
-  b: number;
+export interface Edge {
+  d1: Dart;
+  d2: Dart;
   length: number;
 }
 
@@ -17,7 +16,7 @@ export class ChiShapeComputer {
   private lengthThreshold: number;
   private boundaryEdges: Edge[];
   private removedEdges: Edge[];
-  private computedChiShape: Vector[] | null;
+  private computedChiShape: Edge[] | null;
 
   constructor(points: Vector[], lambda: number) {
     this.points = points;
@@ -30,7 +29,7 @@ export class ChiShapeComputer {
     this.computedChiShape = null;
   }
 
-  public chiShape(): Vector[] {
+  public chiShape(): Edge[] {
     if (this.computedChiShape === null) {
       this.computedChiShape = this.computeChiShape();
     }
@@ -76,86 +75,127 @@ export class ChiShapeComputer {
   }
 
   private computeSortedBoundaryEdges(): Edge[] {
-    const boundaryEdges: Set<string> = new Set();
-    for (let i = 0; i < this.combinatorialMap.darts.length; i += 1) {
-      const d1 = this.combinatorialMap.darts[i];
-      const d2 = this.combinatorialMap.theta0.get(d1)!;
-      if (this.combinatorialMap.isBoundaryEdge(d1, d2)) {
-        const [minIndex, maxIndex] = [d1.origin, d2.origin].sort((a, b) => a - b);
-        boundaryEdges.add(`${minIndex}-${maxIndex}`);
-      }
-    }
+    const edges = this.combinatorialMap.boundaryEdges();
 
-    const edges = this.combinatorialMap.boundaryEdges()
-
-    const edgeArray = Array.from(edges).map(edge => {
-      const [a, b] = edge;
-      return { a: a.origin, b: b.origin, length: Vector.dist(this.points[a.origin], this.points[b.origin]) };
-    });
+    const edgeArray = edges.map(([d1, d2]) => ({
+      d1,
+      d2,
+      length: Vector.dist(this.points[d1.origin], this.points[d2.origin])
+    }));
 
     edgeArray.sort((e1, e2) => e2.length - e1.length);
     return edgeArray;
   }
 
-  private computeChiShape(): Vector[] {
-    const chiShape = new Set(this.boundaryEdges.map(e => `${e.a}-${e.b}`));
-    
-    for (const edge of this.boundaryEdges) {
-      
-      const { a, b, length } = edge;
-      const d1 = this.combinatorialMap.dartMap.get(`${a}-${b}`);
-      const d2 = this.combinatorialMap.dartMap.get(`${b}-${a}`);
-      if (!d1 || !d2 || d1.removed || d2.removed) continue;
-      
+  private computeChiShape(): Edge[] {
+    const chiShape = new Set(this.boundaryEdges);
+    let index = 0;
+
+    while (index < this.boundaryEdges.length) {
+      const edge = this.boundaryEdges[index];
+      const { d1, d2, length } = edge;
+
+      if (d1.removed || d2.removed) {
+        this.boundaryEdges.splice(index, 1);
+        chiShape.delete(edge);
+        continue;
+      }
+
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
       const exceedsLength = length > this.lengthThreshold;
 
       if (isRegular && exceedsLength) {
-        
+        console.log('removing edge', edge);
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
         this.combinatorialMap.removeEdge(d1, d2);
-        this.removedEdges.push({
-          a: a,
-          b: b,
-          length: length
-        });
+        this.removedEdges.push(edge);
 
-        chiShape.delete(`${a}-${b}`);
+        chiShape.delete(edge);
+        this.boundaryEdges.splice(index, 1);
 
-        chiShape.add(`${r1.origin}-${r1.next}`);
-        chiShape.add(`${r2.origin}-${r2.next}`);
+        const newEdge1 = this.createEdge(r1, this.combinatorialMap.t0(r1)!);
+        const newEdge2 = this.createEdge(r2, this.combinatorialMap.t0(r2)!);
+        console.log('adding edge', newEdge1);
+        console.log('adding edge 2', newEdge2);
+
+        this.insertSortedEdge(newEdge1);
+        this.insertSortedEdge(newEdge2);
+
+        chiShape.add(newEdge1);
+        chiShape.add(newEdge2);
+
+        // Reset index to start checking from the beginning
+        index = 0;
+      } else {
+        index++;
       }
     }
 
+    console.log('chishape length', chiShape.size);
     return this.sortEdges(chiShape);
   }
 
-  private sortEdges(edges: Set<string>): Vector[] {
-    if (edges.size === 0) return [];
-
-    const edgeList = Array.from(edges).map(edge => edge.split('-').map(Number));
-    const sortedPoints: number[] = [];
-    const used = new Set<string>();
-
-    sortedPoints.push(edgeList[0][0], edgeList[0][1]);
-    used.add(edgeList[0].join('-'));
-
-    while (used.size < edges.size) {
-      const last = sortedPoints[sortedPoints.length - 1];
-      const nextEdge = edgeList.find(edge => 
-        !used.has(edge.join('-')) && (edge[0] === last || edge[1] === last)
-      );
-
-      if (!nextEdge) break;
-
-      used.add(nextEdge.join('-'));
-      if (nextEdge[0] === last) {
-        sortedPoints.push(nextEdge[1]);
-      } else {
-        sortedPoints.push(nextEdge[0]);
-      }
+  private insertSortedEdge(edge: Edge) {
+    const index = this.boundaryEdges.findIndex(e => e.length <= edge.length);
+    if (index === -1) {
+      this.boundaryEdges.push(edge);
+    } else {
+      this.boundaryEdges.splice(index, 0, edge);
     }
-
-    return sortedPoints.map(i => this.points[i]);
   }
+
+  private createEdge(d1: Dart, d2: Dart): Edge {
+    return {
+      d1,
+      d2,
+      length: Vector.dist(this.points[d1.origin], this.points[d2.origin])
+    };
+  }
+
+  private sortEdges(edges: Set<Edge>): Edge[] {
+    if (edges.size === 0) return [];
+  
+    const sortedEdges: Edge[] = [];
+    const remainingEdges = new Set(edges);
+  
+    // Start with an arbitrary edge
+    let currentEdge = remainingEdges.values().next().value;
+    remainingEdges.delete(currentEdge);
+    sortedEdges.push(currentEdge);
+  
+    let lastPoint = currentEdge.d2.origin;  // Assume we're starting from d1 to d2
+  
+    while (remainingEdges.size > 0) {
+      const nextEdge = Array.from(remainingEdges).find(edge => 
+        edge.d1.origin === lastPoint || edge.d2.origin === lastPoint
+      );
+  
+      if (!nextEdge) {
+        throw new Error('Edges do not form a closed perimeter');
+      }
+  
+      // Reorient the darts in the edge if necessary
+      if (nextEdge.d2.origin === lastPoint) {
+        // Swap d1 and d2
+        [nextEdge.d1, nextEdge.d2] = [nextEdge.d2, nextEdge.d1];
+      }
+  
+      sortedEdges.push(nextEdge);
+      remainingEdges.delete(nextEdge);
+      lastPoint = nextEdge.d2.origin;  // Update lastPoint for the next iteration
+    }
+  
+    // Ensure the last edge connects back to the first edge
+    const firstEdge = sortedEdges[0];
+    const lastEdge = sortedEdges[sortedEdges.length - 1];
+    if (lastEdge.d2.origin !== firstEdge.d1.origin) {
+      throw new Error('Edges do not form a closed loop');
+    }
+  
+    return sortedEdges;
+  }
+}
+
+function arrayIntersection<T>(arr1: T[], arr2: T[]): T[] {
+  return arr1.filter(item => arr2.includes(item));
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Vector } from './vector';
 import { ChiShapeComputer } from './chiShape';
 import { CombinatorialMap, Dart } from './CombinatorialMap';
@@ -7,6 +7,7 @@ import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
 import { Line } from './Line';
 import { Triangle } from './CombinatorialMap';
+import { Edge } from './chiShape';
 
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
@@ -15,33 +16,37 @@ const ChiShapeVisualization: React.FC = () => {
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null)
   const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null)
-  const [boundaryInfo, setBoundaryInfo] = useState<number>()
-  const [chiShape, setChiShape] = useState<Vector[]>()
+  //const [chiShape, setChiShape] = useState<Edge[]>()
   const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
   const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>()
   const [size, setSize] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
-  const updateChiShape = useCallback(() => {
+  const chiShape = useMemo(() => new ChiShapeComputer(points, lambda).chiShape(), [points, lambda])
+
+  useEffect(() => {
+    console.log('Points changed:', points);
     if (points.length < 3) {
-      setChiShape(undefined);
-      setLengthThresh(0)
+      //setChiShape([]);
+      setLengthThresh(0);
+      setCombinatorialMap(undefined);
+      setDelaunayTriangles(undefined);
       return;
     }
-    try {
-      const chiShapeComputer = new ChiShapeComputer(points, lambda)
-      setChiShape(chiShapeComputer.chiShape())
-      setLengthThresh(chiShapeComputer.getLengthThreshold())
-      setCombinatorialMap(chiShapeComputer.getCombinatorialMap())
-      setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles())
 
+    try {
+      const chiShapeComputer = new ChiShapeComputer(points, lambda);
+      const newChiShape = Array.from(chiShapeComputer.chiShape());
+      console.log('New Chi Shape:', newChiShape);
+      //setChiShape(newChiShape);
+      setLengthThresh(chiShapeComputer.getLengthThreshold());
+      setCombinatorialMap(chiShapeComputer.getCombinatorialMap());
+      setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles());
     } catch (error) {
       console.error("Error calculating Chi Shape:", error);
-      setChiShape(undefined);
+      //setChiShape([]);
     }
-
-    console.log('points', points);
   }, [points, lambda]);
 
   useEffect(() => {
@@ -102,23 +107,23 @@ const ChiShapeVisualization: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    updateChiShape();
-  }, [updateChiShape]);
-
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const clickedPoint = new Vector(x, y);
 
-    const existingPointIndex = points.findIndex(p => Vector.dist(p, clickedPoint) < 10);
-    
-    if (existingPointIndex !== -1) {
-      setPoints(prevPoints => prevPoints.filter((_, index) => index !== existingPointIndex));
-    } else {
-      setPoints(prevPoints => [...prevPoints, clickedPoint]);
-    }
+    setPoints(prevPoints => {
+      const existingPointIndex = prevPoints.findIndex(p => Vector.dist(p, clickedPoint) < 10);
+      
+      if (existingPointIndex !== -1) {
+        console.log('Removing point at index:', existingPointIndex);
+        return prevPoints.filter((_, index) => index !== existingPointIndex);
+      } else {
+        console.log('Adding new point:', clickedPoint);
+        return [...prevPoints, clickedPoint];
+      }
+    });
   };
 
   const getDartInfo = () => {
@@ -169,16 +174,17 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderChiShape = () => {
-    if (!chiShape) return null;
 
-    const validPoints = chiShape.filter(p => p !== undefined);
+    const validPoints = chiShape.filter(e => points[e.d1.origin] !== undefined && points[e.d2.origin] !== undefined);
+    chiShape.forEach(p => console.log('edge', p))
     if (validPoints.length !== chiShape.length) {
       console.warn("Some chi shape points are undefined");
-    }
+    }    
 
+    console.log('chi shape!!!', chiShape)
     return (
       <polygon
-        points={validPoints.map(p => `${p.x},${p.y}`).join(' ')}
+        points={Array.from(chiShape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
         fill="none"
         stroke="rgba(128, 0, 128, 0.3)"
         strokeWidth={10}
