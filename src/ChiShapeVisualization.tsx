@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Vector } from './vector';
-import { ChiShapeComputer } from './chiShape';
+import { ChiShapeComputer, ComputationStep } from './chiShape';
 import { CombinatorialMap, Dart } from './CombinatorialMap';
 import { DartView } from './DartView';
 import { TriangleView } from './TriangleView';
@@ -20,11 +20,19 @@ const ChiShapeVisualization: React.FC = () => {
   const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
   const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>()
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const [stepIndex, setStepIndex] = useState<number>(0)
 
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
-  const chiShape = useMemo(() => new ChiShapeComputer(points, lambda).chiShape(), [points, lambda])
+  const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda])
+  const currentStep = useMemo(() => steps[stepIndex], [stepIndex])
+
+  useEffect(() => {
+    console.log(steps)
+    setStepIndex(0)
+    console.log('first step', steps[0])
+  }, [steps])
 
   useEffect(() => {
     if (points.length < 3) {
@@ -37,8 +45,6 @@ const ChiShapeVisualization: React.FC = () => {
     try {
       const t1 = new Date().getMilliseconds()
       const chiShapeComputer = new ChiShapeComputer(points, lambda);
-      console.log('millis', (new Date()).getMilliseconds() - t1)
-      const newChiShape = Array.from(chiShapeComputer.chiShape());
       setLengthThresh(chiShapeComputer.getLengthThreshold());
       setCombinatorialMap(chiShapeComputer.getCombinatorialMap());
       setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles());
@@ -104,6 +110,10 @@ const ChiShapeVisualization: React.FC = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleStepChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setStepIndex(Number(event.target.value));
+  };  
 
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -171,15 +181,17 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderChiShape = () => {
+    const shape = currentStep?.currentChiShape
+    if (!shape) return
 
-    const validPoints = chiShape.filter(e => points[e.d1.origin] !== undefined && points[e.d2.origin] !== undefined);
-    if (validPoints.length !== chiShape.length) {
+    const validPoints = shape.filter(e => points[e.d1.origin] !== undefined && points[e.d2.origin] !== undefined);
+    if (validPoints.length !== shape.length) {
       console.warn("Some chi shape points are undefined");
     }    
 
     return (
       <polygon
-        points={Array.from(chiShape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
+        points={Array.from(shape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
         fill="none"
         stroke="rgba(128, 0, 128, 0.3)"
         strokeWidth={10}
@@ -240,6 +252,27 @@ const ChiShapeVisualization: React.FC = () => {
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       <div style={{ width: `${INFO_COLUMN_WIDTH}px`, padding: '10px', background: '#f0f0f0', overflowY: 'auto' }}>
+      <h3>Chi Shape Computation</h3>
+        <input
+          type="range"
+          min="0"
+          max={steps.length - 1}
+          value={stepIndex}
+          onChange={handleStepChange}
+        />
+        <p>Step: {stepIndex + 1} / {steps.length}</p>
+        {currentStep && (
+          <div>
+            <p>Type: {currentStep.type}</p>
+            {currentStep.type === 'analyze' && (
+              <>
+                <p>Is Regular: {currentStep.isRegular ? 'Yes' : 'No'}</p>
+                <p>Is Boundary: {currentStep.isBoundary ? 'Yes' : 'No'}</p>
+              </>
+            )}
+            <p>Remaining Edges: {currentStep.remainingEdges.length}</p>
+          </div>
+        )}
         <h3>Dart Information</h3>
         {getDartInfo()}
         <div style={{ marginTop: '20px' }}>

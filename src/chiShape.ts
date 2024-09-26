@@ -8,6 +8,18 @@ export interface Edge {
   length: number;
 }
 
+export interface ComputationStep {
+  type: 'init' | 'analyze' | 'remove';
+  edge?: Edge;
+  isRegular?: boolean;
+  isBoundary?: boolean;
+  removedEdges?: Edge[];
+  newEdges?: Edge[];
+  currentChiShape: Edge[];
+  remainingEdges: Edge[];
+}
+
+
 export class ChiShapeComputer {
   private points: Vector[];
   private lambda: number;
@@ -16,7 +28,7 @@ export class ChiShapeComputer {
   private lengthThreshold: number;
   private boundaryEdges: Edge[];
   private removedEdges: Edge[];
-  private computedChiShape: Edge[] | null;
+  private computationSteps: ComputationStep[];
 
   constructor(points: Vector[], lambda: number) {
     this.points = points;
@@ -26,14 +38,12 @@ export class ChiShapeComputer {
     this.boundaryEdges = this.computeSortedBoundaryEdges();
     this.lengthThreshold = this.calculateLengthThreshold();
     this.removedEdges = [];
-    this.computedChiShape = null;
+    this.computationSteps = [];
+    this.computeChiShapeSteps();
   }
 
-  public chiShape(): Edge[] {
-    if (this.computedChiShape === null) {
-      this.computedChiShape = this.computeChiShape();
-    }
-    return this.computedChiShape;
+  public getComputationSteps(): ComputationStep[] {
+    return this.computationSteps;
   }
 
   public getDelaunayTriangles(): Triangle[] {
@@ -115,8 +125,8 @@ export class ChiShapeComputer {
         const newEdge1 = this.createEdge(r1, this.combinatorialMap.t0(r1)!);
         const newEdge2 = this.createEdge(r2, this.combinatorialMap.t0(r2)!);
 
-        this.insertSortedEdge(newEdge1);
-        this.insertSortedEdge(newEdge2);
+        //this.insertSortedEdge(newEdge1);
+        //this.insertSortedEdge(newEdge2);
 
         chiShape.add(newEdge1);
         chiShape.add(newEdge2);
@@ -131,14 +141,6 @@ export class ChiShapeComputer {
     return this.sortEdges(chiShape);
   }
 
-  private insertSortedEdge(edge: Edge) {
-    const index = this.boundaryEdges.findIndex(e => e.length <= edge.length);
-    if (index === -1) {
-      this.boundaryEdges.push(edge);
-    } else {
-      this.boundaryEdges.splice(index, 0, edge);
-    }
-  }
 
   private createEdge(d1: Dart, d2: Dart): Edge {
     return {
@@ -189,5 +191,78 @@ export class ChiShapeComputer {
     }
   
     return sortedEdges;
+  }
+
+  private computeChiShapeSteps() {
+    const initialBoundaryEdges = this.computeSortedBoundaryEdges();
+    
+    // Initial step
+    this.computationSteps.push({
+      type: 'init',
+      currentChiShape: this.sortEdges(new Set<Edge>([...initialBoundaryEdges])),
+      remainingEdges: [...initialBoundaryEdges]
+    });
+
+    while (this.computationSteps[this.computationSteps.length - 1].remainingEdges.length > 0) {
+      const lastStep = this.computationSteps[this.computationSteps.length - 1];
+      const edge = lastStep.remainingEdges[0];
+      const { d1, d2, length } = edge;
+
+      const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
+      const isBoundary = this.combinatorialMap.isBoundaryEdge(d1, d2);
+      const exceedsLength = length > this.lengthThreshold;
+
+      // Add analysis step
+      this.computationSteps.push({
+        type: 'analyze',
+        edge: edge,
+        isRegular: isRegular,
+        isBoundary: isBoundary,
+        currentChiShape:  this.sortEdges(new Set<Edge>([...lastStep.currentChiShape])),
+        remainingEdges: [...lastStep.remainingEdges]
+      });
+
+      if (isRegular && exceedsLength) {
+        const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
+        this.combinatorialMap.removeEdge(d1, d2);
+
+        const newEdge1 = this.createEdge(r1, this.combinatorialMap.t0(r1)!);
+        const newEdge2 = this.createEdge(r2, this.combinatorialMap.t0(r2)!);
+
+        const newChiShape = lastStep.currentChiShape.filter(e => e !== edge).concat([newEdge1, newEdge2]);
+        const newRemainingEdges = this.insertSortedEdges(lastStep.remainingEdges.filter(e => e !== edge), [newEdge1, newEdge2]);
+
+        // Add removal step
+        this.computationSteps.push({
+          type: 'remove',
+          edge: edge,
+          removedEdges: [edge],
+          newEdges: [newEdge1, newEdge2],
+          currentChiShape: this.sortEdges(new Set<Edge>(newChiShape)),
+          remainingEdges: newRemainingEdges
+        });
+      } else {
+        // If not removed, just remove from remaining edges
+        this.computationSteps.push({
+          type: 'remove',
+          edge: edge,
+          currentChiShape: [...lastStep.currentChiShape],
+          remainingEdges: lastStep.remainingEdges.slice(1)
+        });
+      }
+    }
+  }
+
+  private insertSortedEdges(edges: Edge[], newEdges: Edge[]): Edge[] {
+    const result = [...edges];
+    for (const edge of newEdges) {
+      const index = result.findIndex(e => e.length <= edge.length);
+      if (index === -1) {
+        result.push(edge);
+      } else {
+        result.splice(index, 0, edge);
+      }
+    }
+    return result;
   }
 }
