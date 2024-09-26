@@ -44,18 +44,9 @@ export class CombinatorialMap {
       const d5 = this.addDart(c, face, b)
       const d6 = this.addDart(a, face, c)
 
-      // Set theta0 (opposite darts)
       this.setTheta0(d1, d4);
       this.setTheta0(d2, d5);
       this.setTheta0(d3, d6);
-
-      // Add darts to vertexDarts
-      this.addToVertexDarts(d1);
-      this.addToVertexDarts(d2);
-      this.addToVertexDarts(d3);
-      this.addToVertexDarts(d4);
-      this.addToVertexDarts(d5);
-      this.addToVertexDarts(d6);
     })
 
     // Second pass: set theta1 based on counterclockwise ordering
@@ -72,6 +63,8 @@ export class CombinatorialMap {
     const dart: Dart = { index: this.darts.length, origin, face, next, removed: false };
     this.darts.push(dart);
     this.dartMap.set(key, dart);
+
+    this.addToVertexDarts(dart)
     return dart;
   }
 
@@ -79,6 +72,10 @@ export class CombinatorialMap {
     this.theta0.set(d1, d2);
     this.theta0.set(d2, d1);
   }
+
+  private setTheta1(d1: Dart, d2: Dart) {
+    this.theta1.set(d1, d2);
+  }  
 
   private addToVertexDarts(dart: Dart) {
     if (!this.vertexDarts.has(dart.origin)) {
@@ -88,11 +85,8 @@ export class CombinatorialMap {
   }
 
   private setTheta1ForVertex(vertex: number, darts: Dart[], points: Vector[]) {
-    const center = points[vertex];
     darts.sort((a, b) => {
-      const aNext = points[a.next];
-      const bNext = points[b.next];
-      return this.counterClockwiseCompare(center, aNext, bNext);
+      return this.counterClockwiseCompare(points[vertex], points[a.next], points[b.next]);
     });
 
     for (let i = 0; i < darts.length; i++) {
@@ -104,10 +98,6 @@ export class CombinatorialMap {
     const angleA = Math.atan2(a.y - center.y, a.x - center.x);
     const angleB = Math.atan2(b.y - center.y, b.x - center.x);
     return angleB - angleA;
-  }
-
-  private setTheta1(d1: Dart, d2: Dart) {
-    this.theta1.set(d1, d2);
   }
 
   t0(d: Dart | undefined): Dart | undefined {
@@ -150,53 +140,33 @@ export class CombinatorialMap {
     return Array.from(edgeMap.values());
   }
 
+  // Attempts to "walk" around the triangle in a clockwise direction, starting at the specified dart. 
+  // If the result is the same dart, it means there is a closed triangle formed between d and theta1(d)
+  clockwiseLoop(d: Dart): Dart | undefined {
+    return this.t1(this.t0(this.t1(this.t0(this.t1(this.t0(d))))));
+  }
 
   boundaryEdgeInfo(d1: Dart, d2: Dart) {
     if (!d1 || !d2 || d1.removed || d2.removed) return undefined;
 
-    const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
-    const theta0 = (x: Dart) => this.t0(x) ?? x;
-    const theta1 = (x: Dart) => this.t1(x) ?? x;
-    
-    const composition = compose(theta1, compose(theta0, compose(theta1, compose(theta0, compose(theta1, theta0)))));
-
     return {
-      d1: composition(d1),
-      d2: composition(d2),
-      d1alt: theta1(theta0(theta1(theta0(theta1(theta0(d1)))))),
-      d2alt: theta1(theta0(theta1(theta0(theta1(theta0(d2))))))
+      d1: this.clockwiseLoop(d1),
+      d2: this.clockwiseLoop(d2),
     }
+  }
+
+  isBoundaryEdge(d1: Dart, d2: Dart): boolean {
+    if (!d1 || !d2 || d1.removed || d2.removed) return false;
+    return !(this.clockwiseLoop(d1) === d1 && this.clockwiseLoop(d2) === d2);
   }
 
   edgeLength(d: Dart): number {
     return Vector.dist(this.points[d.origin], this.points[d.next])
   }
 
-  isBoundaryEdge(d1: Dart, d2: Dart): boolean {
-    if (!d1 || !d2 || d1.removed || d2.removed) return false;
-
-    const compose = (f: (x: Dart) => Dart, g: (x: Dart) => Dart) => (x: Dart) => f(g(x));
-    const theta0 = (x: Dart) => this.t0(x) ?? x;
-    const theta1 = (x: Dart) => this.t1(x) ?? x;
-    
-    const composition = compose(theta1, compose(theta0, compose(theta1, compose(theta0, compose(theta1, theta0)))));
-    
-    return !(composition(d1) === d1 && composition(d2) === d2);
-  }
-
   isBoundaryVertex(vertexIndex: number): boolean {
-    const dart = this.darts.find(d => d.origin === vertexIndex && !d.removed);
-    if (!dart) return false;
-    
-    let current = dart;
-    do {
-      if (this.isBoundaryEdge(current, this.t0(current)!)) {
-        return true;
-      }
-      current = this.t1(this.t1(current)!)!;
-    } while (current !== dart);
-    
-    return false;
+    const vertex = this.vertexDarts.get(vertexIndex)
+    return vertex?.some(d => this.isBoundaryEdge(d, this.t0(d)!)) ?? false
   }
 
   isRegularRemoval(d1: Dart, d2: Dart): boolean {

@@ -9,6 +9,7 @@ import { Line } from './Line';
 import { Triangle } from './CombinatorialMap';
 import { Edge } from './chiShape';
 
+
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
   const [lambda, setLambda] = useState(0.1);
@@ -16,10 +17,10 @@ const ChiShapeVisualization: React.FC = () => {
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null)
   const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null)
-  //const [chiShape, setChiShape] = useState<Edge[]>()
   const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
   const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>()
   const [size, setSize] = useState({ width: 0, height: 0 });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
@@ -142,8 +143,8 @@ const ChiShapeVisualization: React.FC = () => {
         <p>θ₁: {theta1 ? theta1.index : 'N/A'}</p>
         <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
         <p>Boundary Info</p>
-        <p>d1 {dart.index}: {boundaryInfo?.d1.index}, {boundaryInfo?.d1alt.index}</p>
-        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2.index}, {boundaryInfo?.d2alt.index}</p>
+        <p>d1 {dart.index}: {boundaryInfo?.d1?.index}</p>
+        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2?.index}</p>
         <p>Revealed Dart: {/*revealed.index*/}</p>
       </div>
     );
@@ -254,7 +255,7 @@ const ChiShapeVisualization: React.FC = () => {
             />
           </label>
           <p>Length threshold: {lengthThresh.toFixed(2)}</p>
-        </div>
+        </div>  
       </div>
       <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
         <svg
@@ -262,6 +263,8 @@ const ChiShapeVisualization: React.FC = () => {
           height="100%"
           onClick={handleSvgClick}
         >
+          
+
           {renderDelaunayTriangles()}
           {renderChiShape()}
           {renderDarts()}

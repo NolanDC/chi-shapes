@@ -79,4 +79,8 @@ export class Vector {
       v1.y + (v2.y - v1.y) * t
     );
   }
+
+  static scale = function(v: Vector, scalar: number): Vector {
+    return new Vector(v.x * scalar, v.y * scalar);
+  };  
 }
