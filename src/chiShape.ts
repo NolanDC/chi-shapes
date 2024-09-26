@@ -121,7 +121,7 @@ export class ChiShapeComputer {
         chiShape.add(newEdge1);
         chiShape.add(newEdge2);
 
-        // Reset index to start checking from the beginning
+        // Reset index to start checking from the beginningg
         index = 0;
       } else {
         index++;
@@ -190,8 +190,4 @@ export class ChiShapeComputer {
   
     return sortedEdges;
   }
-}
-
-function arrayIntersection<T>(arr1: T[], arr2: T[]): T[] {
-  return arr1.filter(item => arr2.includes(item));
 }
