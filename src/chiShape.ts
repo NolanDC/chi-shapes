@@ -105,7 +105,6 @@ export class ChiShapeComputer {
       const exceedsLength = length > this.lengthThreshold;
 
       if (isRegular && exceedsLength) {
-        console.log('removing edge', edge);
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
         this.combinatorialMap.removeEdge(d1, d2);
         this.removedEdges.push(edge);
@@ -115,8 +114,6 @@ export class ChiShapeComputer {
 
         const newEdge1 = this.createEdge(r1, this.combinatorialMap.t0(r1)!);
         const newEdge2 = this.createEdge(r2, this.combinatorialMap.t0(r2)!);
-        console.log('adding edge', newEdge1);
-        console.log('adding edge 2', newEdge2);
 
         this.insertSortedEdge(newEdge1);
         this.insertSortedEdge(newEdge2);
@@ -131,7 +128,6 @@ export class ChiShapeComputer {
       }
     }
 
-    console.log('chishape length', chiShape.size);
     return this.sortEdges(chiShape);
   }
 
