@@ -161,7 +161,7 @@ export class CombinatorialMap {
   }
 
   edgeLength(d: Dart): number {
-    return Vector.dist(this.points[d.origin], this.points[d.next])
+    return this.points[d.origin].dist( this.points[d.next])
   }
 
   isBoundaryVertex(vertexIndex: number): boolean {

@@ -34,11 +34,13 @@ const SVGContainer = styled.div`
 `;
 
 const ChiShapeVisualization: React.FC = () => {
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const [points, setPoints] = useState<Vector[]>([]);
   const [lambda, setLambda] = useState(0.1);
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [stepIndex, setStepIndex] = useState<number>(0);
-  const svgRef = useRef<SVGSVGElement>(null);
+
   const [showDarts, setShowDarts] = useState(true);
   const [showDelaunay, setShowDelaunay] = useState(true);  
   const [showChiShape, setShowChiShape] = useState(true);
@@ -62,7 +64,7 @@ const ChiShapeVisualization: React.FC = () => {
         edgeMap.set(edgeKey, {
           d1: dart,
           d2: theta0,
-          length: Vector.dist(points[dart.origin], points[dart.next])
+          length: points[dart.origin].dist(points[dart.next])
         });
       }
     });
@@ -70,19 +72,9 @@ const ChiShapeVisualization: React.FC = () => {
     return Array.from(edgeMap.values());
   }, [combinatorialMap, points]);
 
-
   useEffect(() => {
-    if (points.length < 3) {
-      setStepIndex(0)
-      return;
-    }
-
-    try {
-      const t1 = new Date().getMilliseconds()
-      const chiShapeComputer = new ChiShapeComputer(points, lambda);
-      setStepIndex(steps.length-1)
-    } catch (error) {
-      console.error("Error calculating Chi Shape:", error);
+    if (steps.length > 0) {
+      setStepIndex(steps.length - 1)
     }
   }, [points, lambda]);
 
@@ -131,7 +123,7 @@ const ChiShapeVisualization: React.FC = () => {
     const clickedPoint = new Vector(x, y);
 
     setPoints(prevPoints => {
-      const existingPointIndex = prevPoints.findIndex(p => Vector.dist(p, clickedPoint) < 10);
+      const existingPointIndex = prevPoints.findIndex(p => p.dist(clickedPoint) < 10);
       
       if (existingPointIndex !== -1) {
         return prevPoints.filter((_, index) => index !== existingPointIndex);

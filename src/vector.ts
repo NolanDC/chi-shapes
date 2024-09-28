@@ -38,13 +38,12 @@ export class Vector {
     }
   }
 
-  dot(other: Vector): number {
-    return Vector.dot(this, other);
+  dist(v: Vector): number {
+    const dx = this.x - v.x;
+    const dy = this.y - v.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
-  cross(other: Vector): number {
-    return Vector.cross(this, other);
-  }
 
   static dot(v1: Vector, v2: Vector): number {
     return v1.x * v2.x + v1.y * v2.y;
@@ -52,12 +51,6 @@ export class Vector {
 
   static cross(v1: Vector, v2: Vector): number {
     return v1.x * v2.y - v1.y * v2.x;
-  }
-
-  static dist(v1: Vector, v2: Vector): number {
-    const dx = v1.x - v2.x;
-    const dy = v1.y - v2.y;
-    return Math.sqrt(dx * dx + dy * dy);
   }
 
   static sub(v1: Vector, v2: Vector): Vector {

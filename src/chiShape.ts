@@ -90,7 +90,7 @@ export class ChiShapeComputer {
     const edgeArray = edges.map(([d1, d2]) => ({
       d1,
       d2,
-      length: Vector.dist(this.points[d1.origin], this.points[d2.origin])
+      length: this.points[d1.origin].dist(this.points[d2.origin])
     }));
 
     edgeArray.sort((e1, e2) => e2.length - e1.length);
@@ -145,7 +145,7 @@ export class ChiShapeComputer {
     return {
       d1,
       d2,
-      length: Vector.dist(this.points[d1.origin], this.points[d2.origin])
+      length: this.points[d1.origin].dist(this.points[d2.origin])
     };
   }
 
@@ -235,18 +235,6 @@ export class ChiShapeComputer {
           remainingEdges: newRemainingEdges
         });
       } else {
-
-        // Add analysis step
-        /*
-        this.computationSteps.push({
-          type: 'analyze',
-          edge: edge,
-          isRegular: isRegular,
-          isBoundary: isBoundary,
-          currentChiShape:  this.sortEdges(new Set<Edge>([...lastStep.currentChiShape])),
-          remainingEdges: [...lastStep.remainingEdges]
-        });
-        */
 
         // If not removed, just remove from remaining edges
         this.computationSteps.push({
