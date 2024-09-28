@@ -43,36 +43,31 @@ const ChiShapeVisualization: React.FC = () => {
   const [showDelaunay, setShowDelaunay] = useState(true);  
   const [showChiShape, setShowChiShape] = useState(true);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const INFO_COLUMN_WIDTH = 250;
-
   const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda]);
   const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
   const chiShapeComputer = useMemo(() => new ChiShapeComputer(points, lambda), [points, lambda])
   const combinatorialMap = useMemo(() => chiShapeComputer.getCombinatorialMap(), [chiShapeComputer])
 
   const delaunayEdges = useMemo(() => {
-    if (combinatorialMap && points.length > 0) {
-      const edgeSet = new Set<string>();
-      const edges: Edge[] = [];
-
-      combinatorialMap.darts.forEach(dart => {
-        const theta0 = combinatorialMap.t0(dart);
-        if (theta0) {
-          const edgeKey = [dart.index, theta0.index].sort().join('-');
-          if (!edgeSet.has(edgeKey)) {
-            edgeSet.add(edgeKey);
-            edges.push({
-              d1: dart,
-              d2: theta0,
-              length: Vector.dist(points[dart.origin], points[dart.next])
-            });
-          }
-        }
-      });
-
-      return edges
-    }
+    if (!combinatorialMap || points.length === 0) return [];
+  
+    const edgeMap = new Map<string, Edge>();
+  
+    combinatorialMap.darts.forEach(dart => {
+      const theta0 = combinatorialMap.t0(dart);
+      if (!theta0) return;
+  
+      const edgeKey = [dart.index, theta0.index].sort().join('-');
+      if (!edgeMap.has(edgeKey)) {
+        edgeMap.set(edgeKey, {
+          d1: dart,
+          d2: theta0,
+          length: Vector.dist(points[dart.origin], points[dart.next])
+        });
+      }
+    });
+  
+    return Array.from(edgeMap.values());
   }, [combinatorialMap, points]);
 
 
@@ -117,7 +112,7 @@ const ChiShapeVisualization: React.FC = () => {
 
   useEffect(() => {
 
-    setPoints(randomPoints(20));
+    setPoints(randomPoints(4));
     //setPoints(simplePoints());
 
   }, []);

@@ -13,7 +13,7 @@ export const Vertex: React.FC<VertexProps> = ({ point, index }) => {
         cx={point.x}
         cy={point.y}
         r={10}
-        fill="black"
+        fill="#50434f"
       />
       <text
         x={point.x}
