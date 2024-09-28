@@ -25,13 +25,13 @@ export const DartView: React.FC<DartViewProps> = ({
 }) => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
-  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+  const angle = Math.atan2(dy, dx);
   
   const dartEndX = start.x + dx * 0.3;
   const dartEndY = start.y + dy * 0.3;
   
-  const midX = start.x + dx * 0.15;
-  const midY = start.y + dy * 0.15;
+  const midX = start.x + dx * 0.18;
+  const midY = start.y + dy * 0.18;
 
   let stroke = 'rgba(0, 0, 0, 0.5)';
   if (isHovered) {
@@ -39,6 +39,28 @@ export const DartView: React.FC<DartViewProps> = ({
   } else if (highlight) {
     stroke = highlight;
   }
+
+  // Calculate arrow points
+  const arrowWidth = 6;
+  const arrowLength = 8;
+  const hitAreaWidth = 10; // Width of the hit area around the dart line
+
+  // Calculate points for the hit area
+  const perpAngle = angle + Math.PI / 2;
+  const hitAreaOffsetX = Math.cos(perpAngle) * hitAreaWidth / 2;
+  const hitAreaOffsetY = Math.sin(perpAngle) * hitAreaWidth / 2;
+
+  // Create refined hitbox path
+  const hitboxPath = `
+    M ${start.x + hitAreaOffsetX} ${start.y + hitAreaOffsetY}
+    L ${dartEndX + hitAreaOffsetX} ${dartEndY + hitAreaOffsetY}
+    L ${dartEndX + Math.cos(angle + Math.PI / 2) * arrowWidth} ${dartEndY + Math.sin(angle + Math.PI / 2) * arrowWidth}
+    L ${dartEndX + Math.cos(angle) * arrowLength} ${dartEndY + Math.sin(angle) * arrowLength}
+    L ${dartEndX + Math.cos(angle - Math.PI / 2) * arrowWidth} ${dartEndY + Math.sin(angle - Math.PI / 2) * arrowWidth}
+    L ${dartEndX - hitAreaOffsetX} ${dartEndY - hitAreaOffsetY}
+    L ${start.x - hitAreaOffsetX} ${start.y - hitAreaOffsetY}
+    Z
+  `;
 
   const renderTheta1Line = () => {
     if (!theta1End || dart.removed) return null;
@@ -58,6 +80,14 @@ export const DartView: React.FC<DartViewProps> = ({
 
   return (
     <g onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+      {/* Refined invisible hitbox */}
+      <path
+        d={hitboxPath}
+        fill="transparent"
+        stroke="transparent"
+        style={{ cursor: 'pointer' }}
+      />
+      {/* Visible dart line */}
       <line
         x1={start.x}
         y1={start.y}
@@ -65,16 +95,18 @@ export const DartView: React.FC<DartViewProps> = ({
         y2={dartEndY}
         stroke={stroke}
         strokeWidth={(isHovered || highlight !== '') ? "4" : "2"}
+        pointerEvents="none"
       />
       <polygon
-        points={(isHovered || highlight !== '') ? "0,-6 8,0 0,6" : "0,-4 6,0 0,4"}
+        points={`0,${-arrowWidth} ${arrowLength},0 0,${arrowWidth}`}
         fill={stroke}
-        transform={`translate(${dartEndX},${dartEndY}) rotate(${angle})`}
+        transform={`translate(${dartEndX},${dartEndY}) rotate(${angle * 180 / Math.PI})`}
+        pointerEvents="none"
       />
       <text
         x={midX}
         y={midY}
-        dominant-baseline="middle"
+        dominantBaseline="middle"
         textAnchor="middle"
         fill="black"
         stroke="white"
@@ -82,8 +114,9 @@ export const DartView: React.FC<DartViewProps> = ({
         paintOrder="stroke"
         fontSize="12"
         fontWeight="bold"
+        pointerEvents="none"
       >
-        {dart.index}{dart.removed ? 'r' : ''}
+        {dart.index}
       </text>
       {/*renderTheta1Line()*/}
     </g>

@@ -1,32 +1,57 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import styled from '@emotion/styled';
 import { Vector } from './vector';
-import { ChiShapeComputer, ComputationStep } from './chiShape';
-import { CombinatorialMap, Dart } from './CombinatorialMap';
+import { ChiShapeComputer } from './chiShape';
+import { CombinatorialMap, Dart, Triangle } from './CombinatorialMap';
 import { DartView } from './DartView';
 import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
-import { Line } from './Line';
-import { Triangle } from './CombinatorialMap';
-import { Edge } from './chiShape';
+import SliderControl from './SliderControl';
 
+
+const Container = styled.div`
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+`;
+
+const InfoPanel = styled.div`
+  width: 250px;
+  padding: 10px;
+  background: #f0f0f0;
+  overflow-y: auto;
+`;
+
+const VisualizationContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SVGContainer = styled.div`
+  flex: 1;
+  position: relative;
+`;
 
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
   const [lambda, setLambda] = useState(0.1);
   const [lengthThresh, setLengthThresh] = useState(0);
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
-  const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null)
-  const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null)
-  const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>()
-  const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>()
+  const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null);
+  const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null);
+  const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>();
+  const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>();
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [stepIndex, setStepIndex] = useState<number>(0)
+  const [stepIndex, setStepIndex] = useState<number>(0);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
-  const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda])
-  const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex])
+  const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda]);
+  const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
 
   useEffect(() => {
     if (points.length < 3) {
@@ -60,12 +85,18 @@ const ChiShapeVisualization: React.FC = () => {
   }, [hoveredDart])
 
   const randomPoints = (num: number) => {
-    const width = window.innerWidth - INFO_COLUMN_WIDTH;
-    const height = window.innerHeight;
+    if (!svgRef.current) return [];
+
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const padding = 40
+    const width = svgRect.width - padding*2;
+    const height = svgRect.height - padding*2;
+    
+
     return Array.from({ length: num }, () => 
-      new Vector(Math.random() * width, Math.random() * height)
+      new Vector(Math.random() * width + padding, Math.random() * height + padding)
     );
-  }
+  };
 
   const simplePoints = () => {
     return [
@@ -79,8 +110,8 @@ const ChiShapeVisualization: React.FC = () => {
 
   useEffect(() => {
 
-    //setPoints(randomPoints(20));
-    setPoints(simplePoints());
+    setPoints(randomPoints(20));
+    //setPoints(simplePoints());
     
     const handleResize = () => {
       //setPoints(randomPoints(20));
@@ -97,21 +128,22 @@ const ChiShapeVisualization: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleStepChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setStepIndex(Number(event.target.value));
-  };  
+  const handleStepChange = (value: number) => {
+    setStepIndex(value);
+  };
 
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    if (!svgRef.current) return;
+
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const x = e.clientX - svgRect.left;
+    const y = e.clientY - svgRect.top;
     const clickedPoint = new Vector(x, y);
 
     setPoints(prevPoints => {
       const existingPointIndex = prevPoints.findIndex(p => Vector.dist(p, clickedPoint) < 10);
       
       if (existingPointIndex !== -1) {
-        console.log('Removing point at index:', existingPointIndex);
         return prevPoints.filter((_, index) => index !== existingPointIndex);
       } else {
         return [...prevPoints, clickedPoint];
@@ -180,7 +212,7 @@ const ChiShapeVisualization: React.FC = () => {
     return (
       <polygon
         points={Array.from(shape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
-        fill="none"
+        fill="rgba(128, 0, 128, 0.05)"
         stroke="rgba(128, 0, 128, 0.3)"
         strokeWidth={10}
       />
@@ -237,17 +269,11 @@ const ChiShapeVisualization: React.FC = () => {
     ));
   };
 
+
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      <div style={{ width: `${INFO_COLUMN_WIDTH}px`, padding: '10px', background: '#f0f0f0', overflowY: 'auto' }}>
-      <h3>Chi Shape Computation</h3>
-        <input
-          type="range"
-          min="0"
-          max={steps.length - 1}
-          value={stepIndex}
-          onChange={handleStepChange}
-        />
+    <Container>
+      <InfoPanel>
+        <h3>Chi Shape Computation</h3>
         <p>Step: {stepIndex + 1} / {steps.length}</p>
         {currentStep && (
           <div>
@@ -276,23 +302,29 @@ const ChiShapeVisualization: React.FC = () => {
             />
           </label>
           <p>Length threshold: {lengthThresh.toFixed(2)}</p>
-        </div>  
-      </div>
-      <div ref={containerRef} style={{ position: 'relative', flex: 1 }}>
-        <svg
-          width="100%"
-          height="100%"
-          onClick={handleSvgClick}
-        >
-          
-
-          {renderDelaunayTriangles()}
-          {renderChiShape()}
-          {renderDarts()}
-          {renderPoints()}
-        </svg>
-      </div>
-    </div>
+        </div>
+      </InfoPanel>
+      <VisualizationContainer>
+        <SVGContainer>
+          <svg
+            ref={svgRef}
+            width="100%"
+            height="100%"
+            onClick={handleSvgClick}
+          >
+            {renderDelaunayTriangles()}
+            {renderChiShape()}
+            {renderDarts()}
+            {renderPoints()}
+          </svg>
+        </SVGContainer>
+        <SliderControl
+          stepIndex={stepIndex}
+          totalSteps={steps.length}
+          onStepChange={handleStepChange}
+        />
+      </VisualizationContainer>
+    </Container>
   );
 };
 

@@ -9,7 +9,7 @@ export interface Edge {
 }
 
 export interface ComputationStep {
-  type: 'init' | 'analyze' | 'remove';
+  type: 'init' | 'analyze' | 'remove' | 'skip';
   edge?: Edge;
   isRegular?: boolean;
   isBoundary?: boolean;
@@ -211,15 +211,7 @@ export class ChiShapeComputer {
       const isBoundary = this.combinatorialMap.isBoundaryEdge(d1, d2);
       const exceedsLength = length > this.lengthThreshold;
 
-      // Add analysis step
-      this.computationSteps.push({
-        type: 'analyze',
-        edge: edge,
-        isRegular: isRegular,
-        isBoundary: isBoundary,
-        currentChiShape:  this.sortEdges(new Set<Edge>([...lastStep.currentChiShape])),
-        remainingEdges: [...lastStep.remainingEdges]
-      });
+
 
       if (isRegular && exceedsLength) {
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
@@ -241,11 +233,26 @@ export class ChiShapeComputer {
           remainingEdges: newRemainingEdges
         });
       } else {
+
+        // Add analysis step
+        /*
+        this.computationSteps.push({
+          type: 'analyze',
+          edge: edge,
+          isRegular: isRegular,
+          isBoundary: isBoundary,
+          currentChiShape:  this.sortEdges(new Set<Edge>([...lastStep.currentChiShape])),
+          remainingEdges: [...lastStep.remainingEdges]
+        });
+        */
+
         // If not removed, just remove from remaining edges
         this.computationSteps.push({
-          type: 'remove',
+          type: 'skip',
           edge: edge,
-          currentChiShape: [...lastStep.currentChiShape],
+          isRegular: isRegular,
+          isBoundary: isBoundary,          
+          currentChiShape:  this.sortEdges(new Set<Edge>([...lastStep.currentChiShape])),
           remainingEdges: lastStep.remainingEdges.slice(1)
         });
       }

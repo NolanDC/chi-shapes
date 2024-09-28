@@ -1,9 +1,13 @@
 import DelaunayVisualization from './ChiShapeVisualization';
+import { MantineProvider } from '@mantine/core';
 
 function App() {
   return (
     <div className="App">
-      <DelaunayVisualization />
+      <MantineProvider>
+        <DelaunayVisualization />
+      </MantineProvider>
+
     </div>
   );
 }
