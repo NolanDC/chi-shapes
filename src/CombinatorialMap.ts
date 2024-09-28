@@ -126,6 +126,7 @@ export class CombinatorialMap {
   }
 
   public boundaryEdges(): [Dart, Dart][] {
+    console.log('dart length', this.darts);
     const edgeMap = new Map<string, [Dart, Dart]>();
 
     for (const dart of this.darts) {

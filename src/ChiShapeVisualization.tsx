@@ -59,41 +59,31 @@ const ChiShapeVisualization: React.FC = () => {
     }
   }, [hoveredDart])
 
+  const randomPoints = (num: number) => {
+    const width = window.innerWidth - INFO_COLUMN_WIDTH;
+    const height = window.innerHeight;
+    return Array.from({ length: num }, () => 
+      new Vector(Math.random() * width, Math.random() * height)
+    );
+  }
+
+  const simplePoints = () => {
+    return [
+      new Vector(224 * 2, 323 * 2),
+      new Vector(216 * 2, 165 * 2),
+      new Vector(62 * 2, 407 * 2),
+      new Vector(273 * 2, 375 * 2)
+    ]
+  }
+
+
   useEffect(() => {
-    const generateRandomPoints = () => {
-      const width = window.innerWidth - INFO_COLUMN_WIDTH;
-      const height = window.innerHeight;
 
-      // broken theta1s
-      const vectorArray = [
-        new Vector(344, 553),
-        new Vector(136, 477),
-        new Vector(235, 425),
-        new Vector(539, 574),
-        new Vector(598, 606),
-        new Vector(700, 530),
-        new Vector(550, 749),
-        new Vector(421, 726),
-        new Vector(169, 784)
-    ];
-    return vectorArray;
-
-      return [
-        new Vector(224 * 2, 323 * 2),
-        new Vector(164 * 2, 302 * 2),  // {x: 164, y: 302}
-        new Vector(216 * 2, 165 * 2),
-        new Vector(62 * 2, 407 * 2),
-        new Vector(273 * 2, 375 * 2)
-      ]
-      /*Array.from({ length: 4 }, () => 
-        new Vector(Math.random() * width, Math.random() * height)
-      );*/
-    };
-
-    setPoints(generateRandomPoints());
+    //setPoints(randomPoints(20));
+    setPoints(simplePoints());
     
     const handleResize = () => {
-      setPoints(generateRandomPoints());
+      //setPoints(randomPoints(20));
       if (containerRef.current) {
         setSize({
           width: containerRef.current.clientWidth,
@@ -177,8 +167,8 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderChiShape = () => {
-    console.log('re-rendering chi shape with current shape', currentStep?.currentChiShape)
-    console.log('re-rendering chi shape with # of points: ', currentStep?.currentChiShape.length)
+    //console.log('re-rendering chi shape with current shape', currentStep?.currentChiShape)
+    //console.log('re-rendering chi shape with # of points: ', currentStep?.currentChiShape.length)
     const shape = currentStep?.currentChiShape
     if (!shape) return
 

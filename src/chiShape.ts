@@ -125,8 +125,7 @@ export class ChiShapeComputer {
         const newEdge1 = this.createEdge(r1, this.combinatorialMap.t0(r1)!);
         const newEdge2 = this.createEdge(r2, this.combinatorialMap.t0(r2)!);
 
-        //this.insertSortedEdge(newEdge1);
-        //this.insertSortedEdge(newEdge2);
+        this.insertSortedEdges(this.boundaryEdges, [newEdge1, newEdge2])
 
         chiShape.add(newEdge1);
         chiShape.add(newEdge2);

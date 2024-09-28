@@ -74,11 +74,11 @@ export const DartView: React.FC<DartViewProps> = ({
       <text
         x={midX}
         y={midY}
-        dy="-5"
+        dominant-baseline="middle"
         textAnchor="middle"
         fill="black"
         stroke="white"
-        strokeWidth="2"
+        strokeWidth="5"
         paintOrder="stroke"
         fontSize="12"
         fontWeight="bold"
@@ -89,7 +89,3 @@ export const DartView: React.FC<DartViewProps> = ({
     </g>
   );
 };
-
-// ... (Vertex, Line, and Triangle components remain the same)
-
-// We can remove the ArrowMarker as it's no longer needed
