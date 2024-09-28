@@ -21,10 +21,8 @@ export const Vertex: React.FC<VertexProps> = ({ point, index }) => {
         textAnchor="middle"
         dy="0.3em"
         fill="white"
-        stroke="black"
-        strokeWidth="1"
         paintOrder="stroke"
-        fontSize="16"
+        fontSize="14"
         fontWeight="bold"
       >
         {index}

@@ -1,10 +1,15 @@
 import DelaunayVisualization from './ChiShapeVisualization';
-import { MantineProvider } from '@mantine/core';
+import { MantineProvider, createTheme } from '@mantine/core';
+
+
+const theme = createTheme({
+  cursorType: 'pointer',
+});
 
 function App() {
   return (
     <div className="App">
-      <MantineProvider>
+      <MantineProvider theme={theme}>
         <DelaunayVisualization />
       </MantineProvider>
 

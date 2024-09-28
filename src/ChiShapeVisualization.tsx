@@ -7,6 +7,7 @@ import { DartView } from './DartView';
 import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
 import SliderControl from './SliderControl';
+import { Slider, Checkbox } from '@mantine/core';
 
 
 const Container = styled.div`
@@ -46,6 +47,8 @@ const ChiShapeVisualization: React.FC = () => {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [stepIndex, setStepIndex] = useState<number>(0);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [showDarts, setShowDarts] = useState(true);
+  const [showDelaunay, setShowDelaunay] = useState(true);  
 
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
@@ -212,8 +215,8 @@ const ChiShapeVisualization: React.FC = () => {
     return (
       <polygon
         points={Array.from(shape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
-        fill="rgba(128, 0, 128, 0.05)"
-        stroke="rgba(128, 0, 128, 0.3)"
+        fill="rgba(243, 231, 243, 1)"
+        stroke="rgba(219, 183, 217, 1)"
         strokeWidth={10}
       />
     );
@@ -273,6 +276,32 @@ const ChiShapeVisualization: React.FC = () => {
   return (
     <Container>
       <InfoPanel>
+        <div style={{ marginBottom: '20px' }}>
+          <label>λ value:</label>
+          <Slider
+            value={lambda}
+            onChange={setLambda}
+            min={0}
+            max={1}
+            step={0.01}
+            label={(value) => value.toFixed(2)}
+            styles={{ root: { width: '100%' } }}
+          />
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <Checkbox
+            label="Show darts"
+            checked={showDarts}
+            onChange={(event) => setShowDarts(event.currentTarget.checked)}
+          />
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <Checkbox
+            label="Show Delaunay triangulation"
+            checked={showDelaunay}
+            onChange={(event) => setShowDelaunay(event.currentTarget.checked)}
+          />
+        </div>
         <h3>Chi Shape Computation</h3>
         <p>Step: {stepIndex + 1} / {steps.length}</p>
         {currentStep && (
@@ -289,20 +318,6 @@ const ChiShapeVisualization: React.FC = () => {
         )}
         <h3>Dart Information</h3>
         {getDartInfo()}
-        <div style={{ marginTop: '20px' }}>
-          <label>
-            λ value:
-            <input
-              type="number"
-              min="0"
-              max="1"
-              step="0.01"
-              value={lambda}
-              onChange={(e) => setLambda(parseFloat(e.target.value))}
-            />
-          </label>
-          <p>Length threshold: {lengthThresh.toFixed(2)}</p>
-        </div>
       </InfoPanel>
       <VisualizationContainer>
         <SVGContainer>
@@ -312,9 +327,10 @@ const ChiShapeVisualization: React.FC = () => {
             height="100%"
             onClick={handleSvgClick}
           >
-            {renderDelaunayTriangles()}
+            
             {renderChiShape()}
-            {renderDarts()}
+            {showDelaunay && renderDelaunayTriangles()}
+            {showDarts && renderDarts()}
             {renderPoints()}
           </svg>
         </SVGContainer>
