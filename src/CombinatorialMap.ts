@@ -103,7 +103,7 @@ export class CombinatorialMap {
   t0(d: Dart | undefined): Dart | undefined {
     if (!d) return undefined
     const result = this.theta0.get(d);
-    return result && !result.removed ? result : undefined;
+    return result ? result : undefined;
   }
 
   t1(d: Dart | undefined, skipRemoved: boolean = true): Dart | undefined {

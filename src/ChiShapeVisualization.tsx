@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Vector } from './vector';
-import { ChiShapeComputer } from './chiShape';
+import { ChiShapeComputer, Edge} from './chiShape';
 import { CombinatorialMap, Dart, Triangle } from './CombinatorialMap';
 import { DartView } from './DartView';
 import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
 import SliderControl from './SliderControl';
 import { Slider, Checkbox } from '@mantine/core';
-
 
 const Container = styled.div`
   display: flex;
@@ -18,9 +17,8 @@ const Container = styled.div`
 `;
 
 const InfoPanel = styled.div`
-  width: 250px;
-  padding: 10px;
-  background: #f0f0f0;
+  width: 325px;
+  padding: 30px;
   overflow-y: auto;
 `;
 
@@ -38,29 +36,48 @@ const SVGContainer = styled.div`
 const ChiShapeVisualization: React.FC = () => {
   const [points, setPoints] = useState<Vector[]>([]);
   const [lambda, setLambda] = useState(0.1);
-  const [lengthThresh, setLengthThresh] = useState(0);
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
-  const [hoveredTheta0, setHoveredTheta0] = useState<Dart | null>(null);
-  const [hoveredTheta1, setHoveredTheta1] = useState<Dart | null>(null);
-  const [combinatorialMap, setCombinatorialMap] = useState<CombinatorialMap>();
-  const [delaunayTriangles, setDelaunayTriangles] = useState<Triangle[]>();
-  const [size, setSize] = useState({ width: 0, height: 0 });
   const [stepIndex, setStepIndex] = useState<number>(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const [showDarts, setShowDarts] = useState(true);
   const [showDelaunay, setShowDelaunay] = useState(true);  
+  const [showChiShape, setShowChiShape] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const INFO_COLUMN_WIDTH = 250;
 
   const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda]);
   const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
+  const chiShapeComputer = useMemo(() => new ChiShapeComputer(points, lambda), [points, lambda])
+  const combinatorialMap = useMemo(() => chiShapeComputer.getCombinatorialMap(), [chiShapeComputer])
+
+  const delaunayEdges = useMemo(() => {
+    if (combinatorialMap && points.length > 0) {
+      const edgeSet = new Set<string>();
+      const edges: Edge[] = [];
+
+      combinatorialMap.darts.forEach(dart => {
+        const theta0 = combinatorialMap.t0(dart);
+        if (theta0) {
+          const edgeKey = [dart.index, theta0.index].sort().join('-');
+          if (!edgeSet.has(edgeKey)) {
+            edgeSet.add(edgeKey);
+            edges.push({
+              d1: dart,
+              d2: theta0,
+              length: Vector.dist(points[dart.origin], points[dart.next])
+            });
+          }
+        }
+      });
+
+      return edges
+    }
+  }, [combinatorialMap, points]);
+
 
   useEffect(() => {
     if (points.length < 3) {
-      setLengthThresh(0);
-      setCombinatorialMap(undefined);
-      setDelaunayTriangles(undefined);
       setStepIndex(0)
       return;
     }
@@ -68,24 +85,12 @@ const ChiShapeVisualization: React.FC = () => {
     try {
       const t1 = new Date().getMilliseconds()
       const chiShapeComputer = new ChiShapeComputer(points, lambda);
-      setLengthThresh(chiShapeComputer.getLengthThreshold());
-      setCombinatorialMap(chiShapeComputer.getCombinatorialMap());
-      setDelaunayTriangles(chiShapeComputer.getDelaunayTriangles());
       setStepIndex(steps.length-1)
     } catch (error) {
       console.error("Error calculating Chi Shape:", error);
     }
   }, [points, lambda]);
 
-  useEffect(() => {
-    if (hoveredDart && combinatorialMap) {
-      setHoveredTheta0(combinatorialMap.t0(hoveredDart) ?? null)
-      setHoveredTheta1(combinatorialMap.t1(hoveredDart) ?? null)
-    } else {
-      setHoveredTheta0(null)
-      setHoveredTheta1(null)
-    }
-  }, [hoveredDart])
 
   const randomPoints = (num: number) => {
     if (!svgRef.current) return [];
@@ -95,7 +100,6 @@ const ChiShapeVisualization: React.FC = () => {
     const width = svgRect.width - padding*2;
     const height = svgRect.height - padding*2;
     
-
     return Array.from({ length: num }, () => 
       new Vector(Math.random() * width + padding, Math.random() * height + padding)
     );
@@ -115,21 +119,9 @@ const ChiShapeVisualization: React.FC = () => {
 
     setPoints(randomPoints(20));
     //setPoints(simplePoints());
-    
-    const handleResize = () => {
-      //setPoints(randomPoints(20));
-      if (containerRef.current) {
-        setSize({
-          width: containerRef.current.clientWidth,
-          height: containerRef.current.clientHeight
-        });
-      }
-    };
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
 
   const handleStepChange = (value: number) => {
     setStepIndex(value);
@@ -169,36 +161,50 @@ const ChiShapeVisualization: React.FC = () => {
     return (
       <div>
         <p>Dart {hoveredDart.index}: from {dart.origin} to {dart.next}</p>
-        <p>Edge Length: {combinatorialMap.edgeLength(dart)}</p>
+        <p>Edge Length: {combinatorialMap.edgeLength(dart).toFixed(2)}</p>
         <p>θ₀: {theta0 ? theta0.index : 'N/A'}</p>
         <p>θ₁: {theta1 ? theta1.index : 'N/A'}</p>
         <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
-        <p>Boundary Info</p>
-        <p>d1 {dart.index}: {boundaryInfo?.d1?.index}</p>
-        <p>d2: {combinatorialMap.theta0.get(dart)?.index} {boundaryInfo?.d2?.index}</p>
-        <p>Revealed Dart: {/*revealed.index*/}</p>
       </div>
     );
   };
 
-  const renderDelaunayTriangles = () => {
-    if (!delaunayTriangles) return null;
-
-    return delaunayTriangles.map((triangle, index) => {
-      const {a, b, c} = triangle;
-      if (!points[a] || !points[b] || !points[c]) {
-        console.warn(`Invalid triangle: ${a}, ${b}, ${c}`);
-        return null;
-      }
+  const renderDelaunayEdges = () => {
+    return delaunayEdges?.map((edge, index) => {
+      const start = points[edge.d1.origin];
+      const end = points[edge.d1.next];
+      
       return (
-        <TriangleView
-          key={`delaunay-${index}`}
-          points={[points[a], points[b], points[c]]}
+        <line
+          key={`delaunay-edge-${index}`}
+          x1={start.x}
+          y1={start.y}
+          x2={end.x}
+          y2={end.y}
           stroke="rgba(0, 0, 100, 0.3)"
           strokeWidth={1}
         />
       );
     });
+  };
+
+  const renderCurrentEdge = () => {
+    if (!currentStep || !currentStep.edge) return null;
+  
+    const { d1, d2 } = currentStep.edge;
+    const start = points[d1.origin];
+    const end = points[d2.origin];
+  
+    return (
+      <line
+        x1={start.x}
+        y1={start.y}
+        x2={end.x}
+        y2={end.y}
+        stroke={currentStep.type == 'remove' ? '#ffbabb' : '#ffdd7c'}
+        strokeWidth={10}
+      />
+    );
   };
 
   const renderChiShape = () => {
@@ -245,6 +251,8 @@ const ChiShapeVisualization: React.FC = () => {
         console.log('some points are invalid in renderDarts()', e)
       }
 
+      const hoveredTheta0 = hoveredDart && combinatorialMap.t0(hoveredDart) === dart
+      const hoveredTheta1 = hoveredDart && combinatorialMap.t1(hoveredDart) === dart
 
       return (
         <DartView
@@ -254,7 +262,7 @@ const ChiShapeVisualization: React.FC = () => {
           end={end}
           theta1End={theta1End}
           isHovered={hoveredDart === dart}
-          highlight={hoveredTheta0 === dart ? 'green' : ((hoveredTheta1 === dart) ? 'blue' : '') }
+          highlight={hoveredTheta0 ? 'green' : (hoveredTheta1 ? 'blue' : '') }
           onMouseEnter={() => setHoveredDart(dart)}
           onMouseLeave={() => setHoveredDart(null)}
         />
@@ -290,6 +298,13 @@ const ChiShapeVisualization: React.FC = () => {
         </div>
         <div style={{ marginBottom: '20px' }}>
           <Checkbox
+            label="Show Chi-shape"
+            checked={showChiShape}
+            onChange={(event) => setShowChiShape(event.currentTarget.checked)}
+          />
+        </div>        
+        <div style={{ marginBottom: '20px' }}>
+          <Checkbox
             label="Show darts"
             checked={showDarts}
             onChange={(event) => setShowDarts(event.currentTarget.checked)}
@@ -307,7 +322,7 @@ const ChiShapeVisualization: React.FC = () => {
         {currentStep && (
           <div>
             <p>Type: {currentStep.type}</p>
-            {currentStep.type === 'analyze' && (
+            {(currentStep.type === 'skip' || currentStep.type === 'remove') && (
               <>
                 <p>Is Regular: {currentStep.isRegular ? 'Yes' : 'No'}</p>
                 <p>Is Boundary: {currentStep.isBoundary ? 'Yes' : 'No'}</p>
@@ -328,8 +343,9 @@ const ChiShapeVisualization: React.FC = () => {
             onClick={handleSvgClick}
           >
             
-            {renderChiShape()}
-            {showDelaunay && renderDelaunayTriangles()}
+            {showChiShape && renderChiShape()}
+            {showDelaunay && renderDelaunayEdges()}
+            {renderCurrentEdge()}
             {showDarts && renderDarts()}
             {renderPoints()}
           </svg>

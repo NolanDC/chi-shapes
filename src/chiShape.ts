@@ -9,7 +9,7 @@ export interface Edge {
 }
 
 export interface ComputationStep {
-  type: 'init' | 'analyze' | 'remove' | 'skip';
+  type: 'init' | 'remove' | 'skip';
   edge?: Edge;
   isRegular?: boolean;
   isBoundary?: boolean;
@@ -227,6 +227,8 @@ export class ChiShapeComputer {
         this.computationSteps.push({
           type: 'remove',
           edge: edge,
+          isRegular: isRegular,
+          isBoundary: isBoundary,              
           removedEdges: [edge],
           newEdges: [newEdge1, newEdge2],
           currentChiShape: this.sortEdges(new Set<Edge>(newChiShape)),
