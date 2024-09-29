@@ -71,7 +71,7 @@ const SliderControl: React.FC<SliderControlProps> = ({ stepIndex, totalSteps, on
       </InteractionContainer>
       <StepCount>
       </StepCount>
-        {stepIndex} / {totalSteps}
+        {stepIndex+1} / {totalSteps}
     </SliderContainer>
   );
 };

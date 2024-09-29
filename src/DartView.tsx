@@ -1,6 +1,7 @@
 import React from 'react';
 import { Vector } from './vector';
 import { CombinatorialMap } from './CombinatorialMap';
+import styled from '@emotion/styled';
 
 interface DartViewProps {
   dart: CombinatorialMap['darts'][number];
@@ -12,6 +13,11 @@ interface DartViewProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
+
+const DartText = styled.text`
+  pointer-events: none;
+  user-select: none;
+`
 
 export const DartView: React.FC<DartViewProps> = ({ 
   dart, 
@@ -33,7 +39,7 @@ export const DartView: React.FC<DartViewProps> = ({
   const midX = start.x + dx * 0.18;
   const midY = start.y + dy * 0.18;
 
-  let stroke = 'rgba(0, 0, 0, 0.5)';
+  let stroke = 'rgba(127, 127, 127, 1)';
   if (isHovered) {
     stroke = 'rgba(255, 0, 0, 0.8)';
   } else if (highlight) {
@@ -103,21 +109,20 @@ export const DartView: React.FC<DartViewProps> = ({
         transform={`translate(${dartEndX},${dartEndY}) rotate(${angle * 180 / Math.PI})`}
         pointerEvents="none"
       />
-      <text
+      <DartText
         x={midX}
         y={midY}
         dominantBaseline="middle"
         textAnchor="middle"
         fill="black"
         stroke="white"
-        strokeWidth="5"
+        strokeWidth="4"
         paintOrder="stroke"
         fontSize="12"
         fontWeight="bold"
-        pointerEvents="none"
       >
         {dart.index}
-      </text>
+      </DartText>
       {/*renderTheta1Line()*/}
     </g>
   );

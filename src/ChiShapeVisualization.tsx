@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Vector } from './vector';
-import { ChiShapeComputer, Edge} from './chiShape';
-import { CombinatorialMap, Dart, Triangle } from './CombinatorialMap';
+import { ChiShapeComputer, ComputationStep, Edge} from './chiShape';
+import { Dart } from './CombinatorialMap';
 import { DartView } from './DartView';
-import { TriangleView } from './TriangleView';
 import { Vertex } from './Vertex';
 import SliderControl from './SliderControl';
 import { Slider, Checkbox } from '@mantine/core';
+import Colors from './Colors';
 
 const Container = styled.div`
   display: flex;
@@ -33,6 +33,32 @@ const SVGContainer = styled.div`
   position: relative;
 `;
 
+const LambdaSliderContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-contnet: center;
+`
+const LambdaIcon = styled.div`
+  background: #4997bd;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: bold;
+  flex-shrink: 0;
+  margin-right: 15px;
+`
+
+const LambdaValue = styled.div`
+  margin-left: 10px;
+  width: 35px;
+  flex-shrink: 0;
+`
+
 const ChiShapeVisualization: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -41,12 +67,12 @@ const ChiShapeVisualization: React.FC = () => {
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [stepIndex, setStepIndex] = useState<number>(0);
 
-  const [showDarts, setShowDarts] = useState(true);
+  const [showDarts, setShowDarts] = useState(false);
   const [showDelaunay, setShowDelaunay] = useState(true);  
   const [showChiShape, setShowChiShape] = useState(true);
 
   const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda]);
-  const currentStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
+  const currentStep: ComputationStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
   const chiShapeComputer = useMemo(() => new ChiShapeComputer(points, lambda), [points, lambda])
   const combinatorialMap = useMemo(() => chiShapeComputer.getCombinatorialMap(), [chiShapeComputer])
 
@@ -104,7 +130,7 @@ const ChiShapeVisualization: React.FC = () => {
 
   useEffect(() => {
 
-    setPoints(randomPoints(4));
+    setPoints(randomPoints(10));
     //setPoints(simplePoints());
 
   }, []);
@@ -169,6 +195,7 @@ const ChiShapeVisualization: React.FC = () => {
           x2={end.x}
           y2={end.y}
           stroke="rgba(0, 0, 100, 0.3)"
+          strokeDasharray="4 4"
           strokeWidth={1}
         />
       );
@@ -188,7 +215,7 @@ const ChiShapeVisualization: React.FC = () => {
         y1={start.y}
         x2={end.x}
         y2={end.y}
-        stroke={currentStep.type == 'remove' ? '#ffbabb' : '#ffdd7c'}
+        stroke={currentStep.type == 'remove' ? Colors.red : Colors.yellow}
         strokeWidth={10}
       />
     );
@@ -208,8 +235,8 @@ const ChiShapeVisualization: React.FC = () => {
     return (
       <polygon
         points={Array.from(shape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
-        fill="rgba(243, 231, 243, 1)"
-        stroke="rgba(219, 183, 217, 1)"
+        fill={Colors.lightPurple}
+        stroke={Colors.purple}
         strokeWidth={10}
       />
     );
@@ -258,13 +285,19 @@ const ChiShapeVisualization: React.FC = () => {
   };
 
   const renderPoints = () => {
-    return points.map((point, index) => (
-      <Vertex
+    return points.map((point, index) => {
+      const isHighlighted = (index == currentStep?.edge?.d1.origin || index == currentStep?.edge?.d2.origin)
+      
+      const color = currentStep?.type == 'remove' ? Colors.red : Colors.yellow
+      const textColor = isHighlighted ? 'black' : 'white'
+      return <Vertex
         key={`point-${index}`}
         point={point}
         index={index}
+        color={isHighlighted ? color : undefined}
+        textColor={textColor}
       />
-    ));
+    });
   };
 
 
@@ -272,16 +305,22 @@ const ChiShapeVisualization: React.FC = () => {
     <Container>
       <InfoPanel>
         <div style={{ marginBottom: '20px' }}>
-          <label>λ value:</label>
-          <Slider
-            value={lambda}
-            onChange={setLambda}
-            min={0}
-            max={1}
-            step={0.01}
-            label={(value) => value.toFixed(2)}
-            styles={{ root: { width: '100%' } }}
-          />
+          
+          <LambdaSliderContainer>
+            <LambdaIcon><span>λ</span></LambdaIcon>
+            <Slider
+              value={lambda}
+              onChange={setLambda}
+              min={0}
+              max={1}
+              step={0.01}
+              label={(value) => value.toFixed(2)}
+              styles={{ root: { width: '100%' } }}
+            />
+            <LambdaValue>
+              {lambda}
+            </LambdaValue>
+          </LambdaSliderContainer>
         </div>
         <div style={{ marginBottom: '20px' }}>
           <Checkbox
@@ -292,20 +331,19 @@ const ChiShapeVisualization: React.FC = () => {
         </div>        
         <div style={{ marginBottom: '20px' }}>
           <Checkbox
-            label="Show darts"
-            checked={showDarts}
-            onChange={(event) => setShowDarts(event.currentTarget.checked)}
-          />
-        </div>
-        <div style={{ marginBottom: '20px' }}>
-          <Checkbox
             label="Show Delaunay triangulation"
             checked={showDelaunay}
             onChange={(event) => setShowDelaunay(event.currentTarget.checked)}
           />
         </div>
+        <div style={{ marginBottom: '20px' }}>
+          <Checkbox
+            label="Show darts"
+            checked={showDarts}
+            onChange={(event) => setShowDarts(event.currentTarget.checked)}
+          />
+        </div>        
         <h3>Chi Shape Computation</h3>
-        <p>Step: {stepIndex + 1} / {steps.length}</p>
         {currentStep && (
           <div>
             <p>Type: {currentStep.type}</p>
@@ -331,8 +369,8 @@ const ChiShapeVisualization: React.FC = () => {
           >
             
             {showChiShape && renderChiShape()}
-            {showDelaunay && renderDelaunayEdges()}
             {renderCurrentEdge()}
+            {showDelaunay && renderDelaunayEdges()}
             {showDarts && renderDarts()}
             {renderPoints()}
           </svg>
