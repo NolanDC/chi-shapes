@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Vector } from './vector';
-import { ChiShapeComputer, ComputationStep, Edge} from './chiShape';
+import { ChiShapeComputer, ComputationStep} from './chiShape';
 import { Dart } from './CombinatorialMap';
-import { DartView } from './DartView';
 import { Vertex } from './Vertex';
 import SliderControl from './SliderControl';
 import { Slider, Checkbox } from '@mantine/core';
@@ -12,6 +11,10 @@ import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
 import { titleCase } from './utils';
 import EdgeSymbol from './ui/EdgeSymbol';
+import Polygon from './viz/Polygon';
+import DelaunayTriangulation from './viz/DelaunayTriangulation';
+import Darts from './viz/Darts';
+import RegularityModal from './modals/RegularityModal';
 
 const Container = styled.div`
   display: flex;
@@ -66,8 +69,18 @@ const LambdaValue = styled.div`
   flex-shrink: 0;
 `
 
-const RemovalCondition = styled.div`
+const ModalButton = styled.span`
+  background-color: unset;
+  border: none;
+  border-bottom: 1px dotted black;
+  margin-left: 6px;
+  cursor: pointer;
+`
 
+const AppTitle = styled.div`
+  text-align: center;
+  font-size: 24px;
+  margin-top: 15px;
 `
 
 const ChiShapeVisualization: React.FC = () => {
@@ -87,27 +100,8 @@ const ChiShapeVisualization: React.FC = () => {
   const chiShapeComputer = useMemo(() => new ChiShapeComputer(points, lambda), [points, lambda])
   const combinatorialMap = useMemo(() => chiShapeComputer.getCombinatorialMap(), [chiShapeComputer])
 
-  const delaunayEdges = useMemo(() => {
-    if (!combinatorialMap || points.length === 0) return [];
-  
-    const edgeMap = new Map<string, Edge>();
-  
-    combinatorialMap.darts.forEach(dart => {
-      const theta0 = combinatorialMap.t0(dart);
-      if (!theta0) return;
-  
-      const edgeKey = [dart.index, theta0.index].sort().join('-');
-      if (!edgeMap.has(edgeKey)) {
-        edgeMap.set(edgeKey, {
-          d1: dart,
-          d2: theta0,
-          length: points[dart.origin].dist(points[dart.next])
-        });
-      }
-    });
-  
-    return Array.from(edgeMap.values());
-  }, [combinatorialMap, points]);
+  const [showRegularityModal, setShowRegularityModal] = useState(false)
+
 
   useEffect(() => {
     if (steps.length > 0) {
@@ -138,12 +132,8 @@ const ChiShapeVisualization: React.FC = () => {
     ]
   }
 
-
   useEffect(() => {
-
     setPoints(randomPoints(10));
-    //setPoints(simplePoints());
-
   }, []);
 
 
@@ -193,26 +183,6 @@ const ChiShapeVisualization: React.FC = () => {
     );
   };
 
-  const renderDelaunayEdges = () => {
-    return delaunayEdges?.map((edge, index) => {
-      const start = points[edge.d1.origin];
-      const end = points[edge.d1.next];
-      
-      return (
-        <line
-          key={`delaunay-edge-${index}`}
-          x1={start.x}
-          y1={start.y}
-          x2={end.x}
-          y2={end.y}
-          stroke="rgba(0, 0, 100, 0.3)"
-          strokeDasharray="4 4"
-          strokeWidth={1}
-        />
-      );
-    });
-  };
-
   const renderCurrentEdge = () => {
     if (!currentStep || !currentStep.edge) return null;
   
@@ -230,69 +200,6 @@ const ChiShapeVisualization: React.FC = () => {
         strokeWidth={10}
       />
     );
-  };
-
-  const renderChiShape = () => {
-    //console.log('re-rendering chi shape with current shape', currentStep?.currentChiShape)
-    //console.log('re-rendering chi shape with # of points: ', currentStep?.currentChiShape.length)
-    const shape = currentStep?.currentChiShape
-    if (!shape) return
-
-    const validPoints = shape.filter(e => points[e.d1.origin] !== undefined && points[e.d2.origin] !== undefined);
-    if (validPoints.length !== shape.length) {
-      console.warn("Some chi shape points are undefined");
-    }    
-
-    return (
-      <polygon
-        points={Array.from(shape.values()).map(p => `${points[p.d1.origin].x},${points[p.d1.origin].y}`).join(' ')}
-        fill={Colors.lightPurple}
-        stroke={Colors.purple}
-        strokeWidth={10}
-      />
-    );
-  };
-
-  const renderDarts = () => {
-    if (!combinatorialMap) return null;
-
-    return combinatorialMap.darts.map((dart) => {
-      const start = points[dart.origin];
-      const end = points[dart.next];
-      
-      if (!start || !end) {
-        console.warn(`Invalid dart: ${dart.index}, origin: ${dart.origin}, next: ${dart.next}`);
-        return null;
-      }
-
-      const theta1Dart = combinatorialMap.t1(dart);
-      let theta1End = null
-      try {
-        theta1End = theta1Dart ? new Vector(
-          points[theta1Dart.origin].x + (points[theta1Dart.next].x - points[theta1Dart.origin].x) * 0.3,
-          points[theta1Dart.origin].y + (points[theta1Dart.next].y - points[theta1Dart.origin].y) * 0.3
-        ) : null;
-      } catch (e) {
-        console.log('some points are invalid in renderDarts()', e)
-      }
-
-      const hoveredTheta0 = hoveredDart && combinatorialMap.t0(hoveredDart) === dart
-      const hoveredTheta1 = hoveredDart && combinatorialMap.t1(hoveredDart) === dart
-
-      return (
-        <DartView
-          key={`dart-${dart.index}`}
-          dart={dart}
-          start={start}
-          end={end}
-          theta1End={theta1End}
-          isHovered={hoveredDart === dart}
-          highlight={hoveredTheta0 ? 'green' : (hoveredTheta1 ? 'blue' : '') }
-          onMouseEnter={() => setHoveredDart(dart)}
-          onMouseLeave={() => setHoveredDart(null)}
-        />
-      );
-    });
   };
 
   const renderPoints = () => {
@@ -316,6 +223,7 @@ const ChiShapeVisualization: React.FC = () => {
 
   return (
     <Container>
+      <RegularityModal opened={showRegularityModal} onClose={() => setShowRegularityModal(false)}/>
       <InfoPanel>
         <div style={{ marginBottom: '20px' }}>
           
@@ -372,8 +280,13 @@ const ChiShapeVisualization: React.FC = () => {
           <div>
             {(currentStep.type === 'skip' || currentStep.type === 'remove') && currentStep.edge && (
               <>
-                <ChecklistStep checked={currentStep.edge.length > chiShapeComputer.getLengthThreshold()}>Exceeds Length Threshold</ChecklistStep>
-                <ChecklistStep checked={currentStep.isRegular ?? false}>Is Regular</ChecklistStep>              
+                <ChecklistStep checked={currentStep.edge.length > chiShapeComputer.getLengthThreshold()}>
+                  Length {'>'} Threshold ({chiShapeComputer.getLengthThreshold().toFixed(2)})
+                </ChecklistStep>
+                <ChecklistStep checked={currentStep.isRegular ?? false}>
+                  Is 
+                  <ModalButton onClick={() => setShowRegularityModal(true)}>Regular</ModalButton>
+                </ChecklistStep>              
                 <p>
                   <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightRed}>{titleCase(currentStep.type)}</ColorLabel>
                   edge
@@ -386,6 +299,7 @@ const ChiShapeVisualization: React.FC = () => {
         {getDartInfo()}
       </InfoPanel>
       <VisualizationContainer>
+        <AppTitle>Chi Shape Algorithm</AppTitle>
         <SVGContainer>
           <svg
             ref={svgRef}
@@ -393,11 +307,21 @@ const ChiShapeVisualization: React.FC = () => {
             height="100%"
             onClick={handleSvgClick}
           >
-            
-            {showChiShape && renderChiShape()}
+            {showChiShape && currentStep?.currentChiShape && 
+              <Polygon
+                points={Array.from(currentStep.currentChiShape.values()).map(e => new Vector(points[e.d1.origin].x, points[e.d1.origin].y))}
+                fill={Colors.lightPurple}
+                stroke={Colors.purple}
+                strokeWidth={10}
+              />
+            }
             {renderCurrentEdge()}
-            {showDelaunay && renderDelaunayEdges()}
-            {showDarts && renderDarts()}
+            {showDelaunay && 
+              <DelaunayTriangulation combinatorialMap={combinatorialMap} points={points}/>
+            }
+            {showDarts && 
+              <Darts combinatorialMap={combinatorialMap} points={points} hoveredDart={hoveredDart} setHoveredDart={setHoveredDart}/>
+            }
             {renderPoints()}
           </svg>
         </SVGContainer>
