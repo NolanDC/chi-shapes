@@ -1,11 +1,13 @@
 import React from 'react';
 import { Vector } from './vector';
 import styled from '@emotion/styled';
+import Colors from './Colors';
 
 interface VertexProps {
   point: Vector;
   index: number;
   color?: string;
+  strokeColor?: string;
   textColor?: string
 }
 
@@ -15,14 +17,16 @@ const VertexNumber = styled.text`
   font-weight: bold;
 `
 
-export const Vertex: React.FC<VertexProps> = ({ point, index, color = "#50434f", textColor = "white" }) => {
+export const Vertex: React.FC<VertexProps> = ({ point, index, color = "#50434f", textColor = "white", strokeColor = Colors.purple }) => {
   return (
     <g>
       <circle
         cx={point.x}
         cy={point.y}
-        r={10}
+        r={12}
         fill={color}
+        stroke={strokeColor}
+        strokeWidth={3}
       />
       <VertexNumber
         x={point.x}

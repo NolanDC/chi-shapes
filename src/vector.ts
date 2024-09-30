@@ -43,37 +43,4 @@ export class Vector {
     const dy = this.y - v.y;
     return Math.sqrt(dx * dx + dy * dy);
   }
-
-
-  static dot(v1: Vector, v2: Vector): number {
-    return v1.x * v2.x + v1.y * v2.y;
-  }
-
-  static cross(v1: Vector, v2: Vector): number {
-    return v1.x * v2.y - v1.y * v2.x;
-  }
-
-  static sub(v1: Vector, v2: Vector): Vector {
-    return new Vector(v1.x - v2.x, v1.y - v2.y);
-  }
-
-  static add(v1: Vector, v2: Vector): Vector {
-    return new Vector(v1.x + v2.x, v1.y + v2.y);
-  }
-
-  static random2D(): Vector {
-    const angle = Math.random() * Math.PI * 2;
-    return new Vector(Math.cos(angle), Math.sin(angle));
-  }
-
-  static lerp(v1: Vector, v2: Vector, t: number): Vector {
-    return new Vector(
-      v1.x + (v2.x - v1.x) * t,
-      v1.y + (v2.y - v1.y) * t
-    );
-  }
-
-  static scale = function(v: Vector, scalar: number): Vector {
-    return new Vector(v.x * scalar, v.y * scalar);
-  };  
 }

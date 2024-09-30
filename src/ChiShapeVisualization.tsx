@@ -8,12 +8,19 @@ import { Vertex } from './Vertex';
 import SliderControl from './SliderControl';
 import { Slider, Checkbox } from '@mantine/core';
 import Colors from './Colors';
+import ChecklistStep from './ui/ChecklistStep';
+import ColorLabel from './ui/ColorLabel';
+import { titleCase } from './utils';
+import EdgeSymbol from './ui/EdgeSymbol';
 
 const Container = styled.div`
   display: flex;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  font-family: "Varela Round", sans-serif;
+  font-weight: 400;
+  font-style: normal;  
 `;
 
 const InfoPanel = styled.div`
@@ -34,7 +41,7 @@ const SVGContainer = styled.div`
 `;
 
 const LambdaSliderContainer = styled.div`
-  display: flex;
+  display: flex;i
   flex-direction: row;
   align-items: center;
   justify-contnet: center;
@@ -57,6 +64,10 @@ const LambdaValue = styled.div`
   margin-left: 10px;
   width: 35px;
   flex-shrink: 0;
+`
+
+const RemovalCondition = styled.div`
+
 `
 
 const ChiShapeVisualization: React.FC = () => {
@@ -215,7 +226,7 @@ const ChiShapeVisualization: React.FC = () => {
         y1={start.y}
         x2={end.x}
         y2={end.y}
-        stroke={currentStep.type == 'remove' ? Colors.red : Colors.yellow}
+        stroke={currentStep.type == 'remove' ? Colors.lightRed : Colors.lightYellow}
         strokeWidth={10}
       />
     );
@@ -290,12 +301,14 @@ const ChiShapeVisualization: React.FC = () => {
       
       const color = currentStep?.type == 'remove' ? Colors.red : Colors.yellow
       const textColor = isHighlighted ? 'black' : 'white'
+      const strokeColor = currentStep?.type == 'remove' ? Colors.lightRed : Colors.lightYellow
       return <Vertex
         key={`point-${index}`}
         point={point}
         index={index}
         color={isHighlighted ? color : undefined}
-        textColor={textColor}
+        strokeColor={isHighlighted ? strokeColor : undefined}
+        textColor='white'
       />
     });
   };
@@ -343,20 +356,33 @@ const ChiShapeVisualization: React.FC = () => {
             onChange={(event) => setShowDarts(event.currentTarget.checked)}
           />
         </div>        
-        <h3>Chi Shape Computation</h3>
-        {currentStep && (
+        <h3>Step {stepIndex+1} / {steps.length}</h3>
+        {currentStep && currentStep.type == 'init' && (
           <div>
-            <p>Type: {currentStep.type}</p>
-            {(currentStep.type === 'skip' || currentStep.type === 'remove') && (
-              <>
-                <p>Is Regular: {currentStep.isRegular ? 'Yes' : 'No'}</p>
-                <p>Is Boundary: {currentStep.isBoundary ? 'Yes' : 'No'}</p>
-              </>
-            )}
-            <p>Remaining Edges: {currentStep.remainingEdges.length}</p>
+            <h4>Initialization</h4>
+            Before running our algorithm, we must:
+            <ul>
+              <li>find the Delaunay triangulation</li>
+              <li>find the border of the triangulation. This is our initial "chi-shape" from which 
+              we will carve away to arrive at the final shape.</li>
+            </ul>
           </div>
         )}
-        <h3>Dart Information</h3>
+        {currentStep && (
+          <div>
+            {(currentStep.type === 'skip' || currentStep.type === 'remove') && currentStep.edge && (
+              <>
+                <ChecklistStep checked={currentStep.edge.length > chiShapeComputer.getLengthThreshold()}>Exceeds Length Threshold</ChecklistStep>
+                <ChecklistStep checked={currentStep.isRegular ?? false}>Is Regular</ChecklistStep>              
+                <p>
+                  <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightRed}>{titleCase(currentStep.type)}</ColorLabel>
+                  edge
+                  <EdgeSymbol vertex1={currentStep.edge.d1.origin} vertex2={currentStep.edge.d2.origin}/>
+                </p>
+              </>
+            )}
+          </div>
+        )}
         {getDartInfo()}
       </InfoPanel>
       <VisualizationContainer>
