@@ -139,6 +139,21 @@ export class CombinatorialMap {
     return Array.from(edgeMap.values());
   }
 
+  public getAllEdges(): [Dart, Dart][] {
+    const edges: [Dart, Dart][] = [];
+    const visited = new Set<number>();
+  
+    for (const dart of this.darts) {
+      if (!visited.has(dart.origin)) {
+        edges.push([dart, this.t0(dart)!]);
+        visited.add(dart.origin);
+        visited.add(this.t0(dart)!.origin);
+      }
+    }
+  
+    return edges;
+  }  
+
   // Attempts to "walk" around the triangle in a clockwise direction, starting at the specified dart. 
   // If the result is the same dart, it means there is a closed triangle formed between d and theta1(d)
   clockwiseLoop(d: Dart): Dart | undefined {

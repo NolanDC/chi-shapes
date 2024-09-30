@@ -76,11 +76,23 @@ export class ChiShapeComputer {
   }
 
   private calculateLengthThreshold(): number {
-    if (this.boundaryEdges.length === 0) {
+    // Get all edges from the combinatorial map
+    const allEdges = this.combinatorialMap.getAllEdges();
+    
+    if (allEdges.length === 0) {
       return 0;
     }
-    const maxLength = this.boundaryEdges[0].length;
-    const minLength = this.boundaryEdges[this.boundaryEdges.length - 1].length;
+  
+    // Calculate the length of each edge
+    const edgeLengths = allEdges.map(([d1, d2]) => 
+      this.points[d1.origin].dist(this.points[d2.origin])
+    );
+  
+    // Find the minimum and maximum lengths
+    const minLength = Math.min(...edgeLengths);
+    const maxLength = Math.max(...edgeLengths);
+  
+    // Calculate the threshold using lambda
     return minLength + this.lambda * (maxLength - minLength);
   }
 
@@ -112,7 +124,7 @@ export class ChiShapeComputer {
       }
 
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
-      const exceedsLength = length > this.lengthThreshold;
+      const exceedsLength = length >= this.lengthThreshold;
 
       if (isRegular && exceedsLength) {
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
@@ -209,7 +221,7 @@ export class ChiShapeComputer {
 
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
       const isBoundary = this.combinatorialMap.isBoundaryEdge(d1, d2);
-      const exceedsLength = length > this.lengthThreshold;
+      const exceedsLength = length >= this.lengthThreshold;
 
 
 
