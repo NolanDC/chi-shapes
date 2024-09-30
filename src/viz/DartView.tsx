@@ -1,6 +1,6 @@
 import React from 'react';
-import { Vector } from './vector';
-import { CombinatorialMap } from './CombinatorialMap';
+import { Vector } from '../math/vector';
+import { CombinatorialMap } from '../math/CombinatorialMap';
 import styled from '@emotion/styled';
 
 interface DartViewProps {

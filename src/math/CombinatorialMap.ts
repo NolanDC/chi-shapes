@@ -1,6 +1,5 @@
 import { Vector } from './vector';
 
-
 export interface Triangle {
   a: number;
   b: number;

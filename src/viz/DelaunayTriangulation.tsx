@@ -1,6 +1,6 @@
-import { Vector } from '../vector';
-import { Edge } from '../chiShape';
-import { CombinatorialMap } from '../CombinatorialMap';
+import { Vector } from '../math/vector';
+import { Edge } from '../math/ChiShapeComputer';
+import { CombinatorialMap } from '../math/CombinatorialMap';
 import { useMemo } from 'react';
 
 interface DelaunayTriangulationProps {

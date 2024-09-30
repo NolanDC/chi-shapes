@@ -1,5 +1,5 @@
 import React from 'react';
-import { Vector } from './vector';
+import { Vector } from '../math/vector';
 
 interface TriangleViewProps {
   points: [Vector, Vector, Vector];

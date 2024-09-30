@@ -1,7 +1,7 @@
 import React from 'react';
-import { Vector } from './vector';
+import { Vector } from '../math/vector';
 import styled from '@emotion/styled';
-import Colors from './Colors';
+import Colors from '../Colors';
 
 interface VertexProps {
   point: Vector;

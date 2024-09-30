@@ -1,12 +1,12 @@
 import { Modal, Text, Title } from '@mantine/core';
 import { useMemo } from 'react';
 import styled from '@emotion/styled';
-import { Vector } from '../vector';
-import { ChiShapeComputer } from '../chiShape';
+import { Vector } from '../math/vector';
+import { ChiShapeComputer } from '../math/ChiShapeComputer';
 import DelaunayTriangulation from '../viz/DelaunayTriangulation';
 import Polygon from '../viz/Polygon';
 import Colors from '../Colors';
-import { Vertex } from '../Vertex';
+import { Vertex } from '../viz/Vertex';
 import EdgeSymbol from '../ui/EdgeSymbol';
 
 const FlexContainer = styled.div`

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styled from '@emotion/styled';
-import { Vector } from './vector';
-import { ChiShapeComputer, ComputationStep} from './chiShape';
-import { Dart } from './CombinatorialMap';
-import { Vertex } from './Vertex';
-import SliderControl from './SliderControl';
+import { Vector } from './math/vector';
+import { ChiShapeComputer, ComputationStep} from './math/ChiShapeComputer';
+import { Dart } from './math/CombinatorialMap';
+import { Vertex } from './viz/Vertex';
+import SliderControl from './ui/SliderControl';
 import { Slider, Checkbox } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';

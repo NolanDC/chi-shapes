@@ -1,7 +1,7 @@
 import React from 'react';
-import { Vertex } from '../Vertex';
-import { Line } from '../Line';
-import { Vector } from '../vector';
+import { Vertex } from '../viz/Vertex';
+import { Line } from '../viz/Line';
+import { Vector } from '../math/vector';
 import styled from '@emotion/styled';
 import Colors from '../Colors';
 

@@ -1,6 +1,6 @@
-import { Vector } from '../vector';
-import { CombinatorialMap, Dart } from '../CombinatorialMap';
-import { DartView } from '../DartView';
+import { Vector } from '../math/vector';
+import { CombinatorialMap, Dart } from '../math/CombinatorialMap';
+import { DartView } from './DartView';
 
 interface DartsProps {
   combinatorialMap: CombinatorialMap;
