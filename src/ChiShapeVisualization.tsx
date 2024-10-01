@@ -176,6 +176,19 @@ const ChiShapeVisualization: React.FC = () => {
     });
   };
 
+  const removePoint = (point: Vector) => {
+    setPoints(prevPoints => {
+      const existingPointIndex = prevPoints.findIndex(p => p === point);
+      
+      if (existingPointIndex !== -1) {
+        return prevPoints.filter((_, index) => index !== existingPointIndex);
+      }
+      return prevPoints;
+    });
+  }
+
+  
+
   const getDartInfo = () => {
     if (hoveredDart === null || !combinatorialMap) return null;
 
@@ -232,6 +245,7 @@ const ChiShapeVisualization: React.FC = () => {
         color={isHighlighted ? color : undefined}
         strokeColor={isHighlighted ? strokeColor : undefined}
         textColor='white'
+        onClick={() => removePoint(point)}
       />
     });
   };

@@ -95,6 +95,7 @@ function RegularityModal({ opened, onClose }: RegularityModalProps) {
                 index={index}
                 strokeColor={Colors.purple}
                 textColor="white"
+                interactive={false}
               />
             ))}
           </svg>
@@ -127,6 +128,7 @@ function RegularityModal({ opened, onClose }: RegularityModalProps) {
                 index={index}
                 strokeColor={Colors.purple}
                 textColor="white"
+                interactive={false}
               />
             ))}
           </svg>
