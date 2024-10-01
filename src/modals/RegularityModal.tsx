@@ -113,7 +113,7 @@ function RegularityModal({ opened, onClose }: RegularityModalProps) {
               y1={30}
               x2={270}
               y2={30}
-              stroke={Colors.lightRed}
+              stroke={Colors.lightGreen}
               strokeWidth={10}
             />
             <DelaunayTriangulation 

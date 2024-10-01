@@ -212,7 +212,7 @@ const ChiShapeVisualization: React.FC = () => {
         y1={start.y}
         x2={end.x}
         y2={end.y}
-        stroke={currentStep.type == 'remove' ? Colors.lightRed : Colors.lightYellow}
+        stroke={currentStep.type == 'remove' ? Colors.lightGreen : Colors.lightYellow}
         strokeWidth={10}
       />
     );
@@ -222,9 +222,9 @@ const ChiShapeVisualization: React.FC = () => {
     return points.map((point, index) => {
       const isHighlighted = (index == currentStep?.edge?.d1.origin || index == currentStep?.edge?.d2.origin)
       
-      const color = currentStep?.type == 'remove' ? Colors.red : Colors.yellow
+      const color = currentStep?.type == 'remove' ? Colors.green : Colors.yellow
       const textColor = isHighlighted ? 'black' : 'white'
-      const strokeColor = currentStep?.type == 'remove' ? Colors.lightRed : Colors.lightYellow
+      const strokeColor = currentStep?.type == 'remove' ? Colors.lightGreen : Colors.lightYellow
       return <Vertex
         key={`point-${index}`}
         point={point}
@@ -325,7 +325,7 @@ const ChiShapeVisualization: React.FC = () => {
                   <ModalButton onClick={() => setShowRegularityModal(true)}>Regular</ModalButton>
                 </ChecklistStep>              
                 <p>
-                  <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightRed}>{titleCase(currentStep.type)}</ColorLabel>
+                  <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightGreen}>{titleCase(currentStep.type)}</ColorLabel>
                   edge
                   <EdgeSymbol vertex1={currentStep.edge.d1.origin} vertex2={currentStep.edge.d2.origin}/>
                 </p>
