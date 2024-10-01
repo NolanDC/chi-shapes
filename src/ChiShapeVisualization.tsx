@@ -221,14 +221,6 @@ const ChiShapeVisualization: React.FC = () => {
   
     return (
       <>
-        <line
-          x1={start.x}
-          y1={start.y}
-          x2={end.x}
-          y2={end.y}
-          stroke={currentStep.type == 'remove' ? Colors.lightRed : Colors.lightYellow}
-          strokeWidth={10}
-        />
         {currentStep.newEdges?.map(edge => {
           const s = points[edge.d1.origin]
           const e = points[edge.d2.origin]
@@ -240,7 +232,15 @@ const ChiShapeVisualization: React.FC = () => {
             stroke={Colors.lightGreen}
             strokeWidth={10}
           />
-        })}
+        })}      
+        <line
+          x1={start.x}
+          y1={start.y}
+          x2={end.x}
+          y2={end.y}
+          stroke={currentStep.type == 'remove' ? Colors.lightRed : Colors.lightYellow}
+          strokeWidth={10}
+        />
       </>
     );
   };
