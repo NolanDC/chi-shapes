@@ -18,8 +18,10 @@ const theme = createTheme({
       "#0c6687"
     ]
   },
-  primaryColor: 'customPrimary'
-  
+  primaryColor: 'customPrimary',
+  fontFamily: 'Varela Round, sans-serif',
+  fontFamilyMonospace: 'Monaco, Courier, monospace',
+  headings: { fontFamily: 'Varela Round, sans-serif' },
 });
 
 

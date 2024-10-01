@@ -5,7 +5,7 @@ import { ChiShapeComputer, ComputationStep} from './math/ChiShapeComputer';
 import { Dart } from './math/CombinatorialMap';
 import { Vertex } from './viz/Vertex';
 import SliderControl from './ui/SliderControl';
-import { Slider, Checkbox } from '@mantine/core';
+import { Slider, Checkbox, Popover, Text } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
@@ -15,6 +15,8 @@ import Polygon from './viz/Polygon';
 import DelaunayTriangulation from './viz/DelaunayTriangulation';
 import Darts from './viz/Darts';
 import RegularityModal from './modals/RegularityModal';
+import OverviewModal from './modals/OverviewModal';
+import { CircleHelp } from 'lucide-react';
 
 const Container = styled.div`
   display: flex;
@@ -56,8 +58,8 @@ const LambdaIcon = styled.div`
   height: 30px;
   border-radius: 50%;
   text-align: center;
-  line-height: 30px;
-  font-size: 16px;
+  line-height: 27px;
+  font-size: 14px;
   font-weight: bold;
   flex-shrink: 0;
   margin-right: 15px;
@@ -81,6 +83,19 @@ const AppTitle = styled.div`
   text-align: center;
   font-size: 24px;
   margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+`
+
+const AlgorithmOverviewIcon = styled(CircleHelp)`
+  color: gray;
+  width: 24px;
+  cursor: pointer;
+  &:hover {
+    color: black;
+  }
 `
 
 const ChiShapeVisualization: React.FC = () => {
@@ -101,7 +116,8 @@ const ChiShapeVisualization: React.FC = () => {
   const combinatorialMap = useMemo(() => chiShapeComputer.getCombinatorialMap(), [chiShapeComputer])
 
   const [showRegularityModal, setShowRegularityModal] = useState(false)
-
+  const [showOverviewModal, setShowOverviewModal] = useState(false)
+  const [showLambdaPopover, setShowLambdaPopover] = useState(false)
 
   useEffect(() => {
     if (steps.length > 0) {
@@ -224,11 +240,32 @@ const ChiShapeVisualization: React.FC = () => {
   return (
     <Container>
       <RegularityModal opened={showRegularityModal} onClose={() => setShowRegularityModal(false)}/>
+      <OverviewModal opened={showOverviewModal} onClose={() => setShowOverviewModal(false)}/>
       <InfoPanel>
         <div style={{ marginBottom: '20px' }}>
           
           <LambdaSliderContainer>
-            <LambdaIcon><span>λ</span></LambdaIcon>
+            <Popover withArrow shadow='md' opened={showLambdaPopover}>
+              <Popover.Target>
+                <LambdaIcon 
+                onMouseEnter={() => setShowLambdaPopover(true)}
+                onMouseLeave={() => setShowLambdaPopover(false)}>
+                  <span>λ<sub>p</sub></span>
+                </LambdaIcon>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <Text size="sm">
+                  <span>λ<sub>p</sub></span> controls the length threshold used to determine
+                  which edges to remove. 
+                  <br/>
+                  <span>λ<sub>p</sub></span> = 0 means that all edges that can be removed
+                  will be.
+                  <br/>
+                  <span>λ<sub>p</sub></span> = 1 means no edges will be removed.
+                </Text>
+              </Popover.Dropdown>
+            </Popover>
+            
             <Slider
               value={lambda}
               onChange={setLambda}
@@ -299,7 +336,10 @@ const ChiShapeVisualization: React.FC = () => {
         {getDartInfo()}
       </InfoPanel>
       <VisualizationContainer>
-        <AppTitle>Chi Shape Algorithm</AppTitle>
+        <AppTitle>
+          <div>Chi Shape Algorithm</div>
+          <AlgorithmOverviewIcon onClick={() => setShowOverviewModal(true)}/>
+        </AppTitle>
         <SVGContainer>
           <svg
             ref={svgRef}
