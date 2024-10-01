@@ -9,7 +9,7 @@ import { Slider, Checkbox, Popover, Text } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
-import { titleCase } from './utils';
+import { arrayIntersect, titleCase } from './utils';
 import EdgeSymbol from './ui/EdgeSymbol';
 import Polygon from './viz/Polygon';
 import DelaunayTriangulation from './viz/DelaunayTriangulation';
@@ -212,7 +212,7 @@ const ChiShapeVisualization: React.FC = () => {
     );
   };
 
-  const renderCurrentEdge = () => {
+  const renderCurrentStep = () => {
     if (!currentStep || !currentStep.edge) return null;
   
     const { d1, d2 } = currentStep.edge;
@@ -220,30 +220,50 @@ const ChiShapeVisualization: React.FC = () => {
     const end = points[d2.origin];
   
     return (
-      <line
-        x1={start.x}
-        y1={start.y}
-        x2={end.x}
-        y2={end.y}
-        stroke={currentStep.type == 'remove' ? Colors.lightGreen : Colors.lightYellow}
-        strokeWidth={10}
-      />
+      <>
+        <line
+          x1={start.x}
+          y1={start.y}
+          x2={end.x}
+          y2={end.y}
+          stroke={currentStep.type == 'remove' ? Colors.lightRed : Colors.lightYellow}
+          strokeWidth={10}
+        />
+        {currentStep.newEdges?.map(edge => {
+          const s = points[edge.d1.origin]
+          const e = points[edge.d2.origin]
+          return <line
+            x1={s.x}
+            y1={s.y}
+            x2={e.x}
+            y2={e.y}
+            stroke={Colors.lightGreen}
+            strokeWidth={10}
+          />
+        })}
+      </>
     );
   };
 
   const renderPoints = () => {
     return points.map((point, index) => {
       const isHighlighted = (index == currentStep?.edge?.d1.origin || index == currentStep?.edge?.d2.origin)
-      
-      const color = currentStep?.type == 'remove' ? Colors.green : Colors.yellow
-      const textColor = isHighlighted ? 'black' : 'white'
-      const strokeColor = currentStep?.type == 'remove' ? Colors.lightGreen : Colors.lightYellow
+    
+      const color = currentStep?.type == 'remove' ? Colors.red : Colors.yellow
+      const strokeColor = currentStep?.type == 'remove' ? Colors.lightRed : Colors.lightYellow
+
+      const vertices = currentStep?.newEdges?.map(e => [e.d1.origin, e.d2.origin])
+      let revealedVertex = undefined
+      if (vertices) {
+        const intersect = arrayIntersect(vertices[0], vertices[1]);
+        revealedVertex = intersect[0]
+      }
       return <Vertex
         key={`point-${index}`}
         point={point}
         index={index}
-        color={isHighlighted ? color : undefined}
-        strokeColor={isHighlighted ? strokeColor : undefined}
+        color={isHighlighted ? color : (revealedVertex == index ? Colors.green : undefined)}
+        strokeColor={isHighlighted ? strokeColor : (revealedVertex == index ? Colors.lightGreen : undefined)}
         textColor='white'
         onClick={() => removePoint(point)}
       />
@@ -339,10 +359,19 @@ const ChiShapeVisualization: React.FC = () => {
                   <ModalButton onClick={() => setShowRegularityModal(true)}>Regular</ModalButton>
                 </ChecklistStep>              
                 <p>
-                  <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightGreen}>{titleCase(currentStep.type)}</ColorLabel>
+                  <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightRed}>{titleCase(currentStep.type)}</ColorLabel>
                   edge
                   <EdgeSymbol vertex1={currentStep.edge.d1.origin} vertex2={currentStep.edge.d2.origin}/>
                 </p>
+                <div>
+                {currentStep.newEdges?.map(edge => (
+                  <p>
+                    <ColorLabel backgroundColor={Colors.lightGreen}>Add</ColorLabel>
+                    edge
+                    <EdgeSymbol vertex1={edge.d1.origin} vertex2={edge.d2.origin}/>
+                  </p>
+                  ))}                  
+                </div>
               </>
             )}
           </div>
@@ -369,7 +398,7 @@ const ChiShapeVisualization: React.FC = () => {
                 strokeWidth={10}
               />
             }
-            {renderCurrentEdge()}
+            {renderCurrentStep()}
             {showDelaunay && 
               <DelaunayTriangulation combinatorialMap={combinatorialMap} points={points}/>
             }
