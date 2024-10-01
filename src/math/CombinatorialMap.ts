@@ -141,13 +141,13 @@ export class CombinatorialMap {
 
   public getAllEdges(): [Dart, Dart][] {
     const edges: [Dart, Dart][] = [];
-    const visited = new Set<number>();
+    const visited = new Set<[number, number]>();
   
     for (const dart of this.darts) {
-      if (!visited.has(dart.origin)) {
+      const sorted = [dart.origin, dart.next].sort() as [number, number]
+      if (!visited.has(sorted)) {
         edges.push([dart, this.t0(dart)!]);
-        visited.add(dart.origin);
-        visited.add(this.t0(dart)!.origin);
+        visited.add(sorted);
       }
     }
   

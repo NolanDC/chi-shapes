@@ -87,7 +87,7 @@ const ChiShapeVisualization: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [points, setPoints] = useState<Vector[]>([]);
-  const [lambda, setLambda] = useState(0.1);
+  const [lambda, setLambda] = useState(.15);
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [stepIndex, setStepIndex] = useState<number>(0);
 
@@ -280,8 +280,8 @@ const ChiShapeVisualization: React.FC = () => {
           <div>
             {(currentStep.type === 'skip' || currentStep.type === 'remove') && currentStep.edge && (
               <>
-                <ChecklistStep checked={currentStep.edge.length > chiShapeComputer.getLengthThreshold()}>
-                  Length {'>'} Threshold ({chiShapeComputer.getLengthThreshold().toFixed(2)})
+                <ChecklistStep checked={currentStep.edge.length >= chiShapeComputer.getLengthThreshold()}>
+                  Length {currentStep.edge.length.toFixed(2)} {'>'} Threshold ({chiShapeComputer.getLengthThreshold().toFixed(2)})
                 </ChecklistStep>
                 <ChecklistStep checked={currentStep.isRegular ?? false}>
                   Is 

@@ -91,7 +91,7 @@ export class ChiShapeComputer {
     // Find the minimum and maximum lengths
     const minLength = Math.min(...edgeLengths);
     const maxLength = Math.max(...edgeLengths);
-  
+    
     // Calculate the threshold using lambda
     return minLength + this.lambda * (maxLength - minLength);
   }
@@ -124,7 +124,7 @@ export class ChiShapeComputer {
       }
 
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
-      const exceedsLength = length >= this.lengthThreshold;
+      const exceedsLength = length > this.lengthThreshold;
 
       if (isRegular && exceedsLength) {
         const [r1, r2] = this.combinatorialMap.revealedEdges(d1, d2);
@@ -221,7 +221,7 @@ export class ChiShapeComputer {
 
       const isRegular = this.combinatorialMap.isRegularRemoval(d1, d2);
       const isBoundary = this.combinatorialMap.isBoundaryEdge(d1, d2);
-      const exceedsLength = length >= this.lengthThreshold;
+      const exceedsLength = length > this.lengthThreshold;
 
 
 
