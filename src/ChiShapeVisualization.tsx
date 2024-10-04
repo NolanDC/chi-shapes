@@ -9,7 +9,7 @@ import { Slider, Checkbox, Popover, Text } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
-import { arrayIntersect, titleCase } from './utils';
+import { arrayIntersect, arrayUnique, titleCase } from './utils';
 import EdgeSymbol from './ui/EdgeSymbol';
 import Polygon from './viz/Polygon';
 import DelaunayTriangulation from './viz/DelaunayTriangulation';
@@ -17,36 +17,53 @@ import Darts from './viz/Darts';
 import RegularityModal from './modals/RegularityModal';
 import OverviewModal from './modals/OverviewModal';
 import { CircleHelp } from 'lucide-react';
+import { TriangleView } from './viz/TriangleView';
 
 const Container = styled.div`
   display: flex;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
+  overflow: auto;
   font-family: "Varela Round", sans-serif;
   font-weight: 400;
-  font-style: normal;  
+  font-style: normal;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    min-height: 100vh;
+  }
 `;
 
 const InfoPanel = styled.div`
   width: 325px;
   padding: 30px;
-  overflow-y: auto;
+  @media (max-width: 768px) {
+    order: 2;
+  }
 `;
 
 const VisualizationContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
+  @media (max-width: 768px) {
+    height: 80vh;
+    flex-shrink: 0;
+  }
 `;
 
 const SVGContainer = styled.div`
-  flex: 1;
   position: relative;
+  flex: 1;
+  @media (max-width: 768px) {
+    flex-basis: 60vh;
+    flex-grow 1;
+    flex-shrink: 0;
+  }  
 `;
 
 const LambdaSliderContainer = styled.div`
-  display: flex;i
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-contnet: center;
@@ -219,8 +236,32 @@ const ChiShapeVisualization: React.FC = () => {
     const start = points[d1.origin];
     const end = points[d2.origin];
   
+    const allPoints = [
+      points[d1.origin],
+      points[d2.origin],
+    ]
+
+    if (currentStep.newEdges) {
+      currentStep.newEdges.forEach(edge => {
+        allPoints.push(
+          points[edge.d1.origin],
+          points[edge.d2.origin]
+        )
+      });
+    }
+    console.log('allpoints', allPoints)
+    const triPoints = arrayUnique(allPoints) as [Vector, Vector, Vector]
     return (
       <>
+        {currentStep.type == 'remove' && (
+          <TriangleView 
+            points={triPoints}
+            stroke='none'
+            fill={Colors.lighterRed}
+            strokeWidth={2}
+            />
+          )}
+
         {currentStep.newEdges?.map(edge => {
           const s = points[edge.d1.origin]
           const e = points[edge.d2.origin]
