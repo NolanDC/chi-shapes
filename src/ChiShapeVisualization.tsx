@@ -18,6 +18,8 @@ import RegularityModal from './modals/RegularityModal';
 import OverviewModal from './modals/OverviewModal';
 import { CircleHelp } from 'lucide-react';
 import { TriangleView } from './viz/TriangleView';
+import BoundaryModal from './modals/BoundaryModal';
+import { jitteredGridPoints, randomPoints } from './generatePoints';
 
 const Container = styled.div`
   display: flex;
@@ -35,10 +37,11 @@ const Container = styled.div`
 `;
 
 const InfoPanel = styled.div`
-  width: 325px;
+  width: 350px;
   padding: 30px;
   @media (max-width: 768px) {
     order: 2;
+    width: 100%;
   }
 `;
 
@@ -92,7 +95,7 @@ const ModalButton = styled.span`
   background-color: unset;
   border: none;
   border-bottom: 1px dotted black;
-  margin-left: 6px;
+  margin-left: 4px;
   cursor: pointer;
 `
 
@@ -119,7 +122,7 @@ const ChiShapeVisualization: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [points, setPoints] = useState<Vector[]>([]);
-  const [lambda, setLambda] = useState(.15);
+  const [lambda, setLambda] = useState(0);
   const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
   const [stepIndex, setStepIndex] = useState<number>(0);
 
@@ -135,6 +138,7 @@ const ChiShapeVisualization: React.FC = () => {
   const [showRegularityModal, setShowRegularityModal] = useState(false)
   const [showOverviewModal, setShowOverviewModal] = useState(false)
   const [showLambdaPopover, setShowLambdaPopover] = useState(false)
+  const [showBoundaryModal, setShowBoundaryModal] = useState(false)
 
   useEffect(() => {
     if (steps.length > 0) {
@@ -142,31 +146,10 @@ const ChiShapeVisualization: React.FC = () => {
     }
   }, [points, lambda]);
 
-
-  const randomPoints = (num: number) => {
-    if (!svgRef.current) return [];
-
-    const svgRect = svgRef.current.getBoundingClientRect();
-    const padding = 40
-    const width = svgRect.width - padding*2;
-    const height = svgRect.height - padding*2;
-    
-    return Array.from({ length: num }, () => 
-      new Vector(Math.random() * width + padding, Math.random() * height + padding)
-    );
-  };
-
-  const simplePoints = () => {
-    return [
-      new Vector(224 * 2, 323 * 2),
-      new Vector(216 * 2, 165 * 2),
-      new Vector(62 * 2, 407 * 2),
-      new Vector(273 * 2, 375 * 2)
-    ]
-  }
-
   useEffect(() => {
-    setPoints(randomPoints(10));
+    if (!svgRef.current) return
+    //setPoints(randomPoints(10, svgRef.current.getBoundingClientRect()));
+    setPoints(jitteredGridPoints(10, svgRef))
   }, []);
 
 
@@ -216,7 +199,6 @@ const ChiShapeVisualization: React.FC = () => {
     const theta1 = combinatorialMap.t1(dart);
     const isBoundary = combinatorialMap.isBoundaryEdge(dart, combinatorialMap.theta0.get(dart)!);
     const boundaryInfo = combinatorialMap.boundaryEdgeInfo(dart, combinatorialMap.theta0.get(dart)!)
-    //const revealed = combinatorialMap.reveal(dart);
 
     return (
       <div>
@@ -316,6 +298,7 @@ const ChiShapeVisualization: React.FC = () => {
     <Container>
       <RegularityModal opened={showRegularityModal} onClose={() => setShowRegularityModal(false)}/>
       <OverviewModal opened={showOverviewModal} onClose={() => setShowOverviewModal(false)}/>
+      <BoundaryModal opened={showBoundaryModal} onClose={() => setShowBoundaryModal(false)}/>
       <InfoPanel>
         <div style={{ marginBottom: '20px' }}>
           
@@ -392,6 +375,9 @@ const ChiShapeVisualization: React.FC = () => {
           <div>
             {(currentStep.type === 'skip' || currentStep.type === 'remove') && currentStep.edge && (
               <>
+                <ChecklistStep checked={currentStep.isBoundary ?? false}>
+                  Is<ModalButton onClick={() => setShowBoundaryModal(true)}>Boundary Edge</ModalButton>
+                </ChecklistStep>              
                 <ChecklistStep checked={currentStep.edge.length >= chiShapeComputer.getLengthThreshold()}>
                   Length {currentStep.edge.length.toFixed(2)} {'>'} Threshold ({chiShapeComputer.getLengthThreshold().toFixed(2)})
                 </ChecklistStep>

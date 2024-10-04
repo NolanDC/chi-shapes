@@ -11,15 +11,18 @@ import EdgeSymbol from '../ui/EdgeSymbol';
 
 const FlexContainer = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   width: 100%;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 `;
 
 const SVGContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 48%; // This ensures equal spacing
 `;
 
 const SVGTitle = styled.div`

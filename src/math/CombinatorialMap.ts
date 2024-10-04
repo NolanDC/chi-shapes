@@ -157,7 +157,8 @@ export class CombinatorialMap {
   // Attempts to "walk" around the triangle in a clockwise direction, starting at the specified dart. 
   // If the result is the same dart, it means there is a closed triangle formed between d and theta1(d)
   clockwiseLoop(d: Dart): Dart | undefined {
-    return this.t1(this.t0(this.t1(this.t0(this.t1(this.t0(d))))));
+    //return this.t1(this.t0(this.t1(this.t0(this.t1(this.t0(d))))));
+    return this.t0(this.t1(this.t0(this.t1(this.t0(this.t1(d))))));
   }
 
   boundaryEdgeInfo(d1: Dart, d2: Dart) {

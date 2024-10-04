@@ -29,7 +29,7 @@ const EdgeSymbol: React.FC<EdgeSymbolProps> = ({ vertex1, vertex2 }) => {
         start={point1}
         end={point2}
         stroke={Colors.purple}
-        strokeWidth={10}
+        strokeWidth={6}
       />
       <Vertex
         point={point1}

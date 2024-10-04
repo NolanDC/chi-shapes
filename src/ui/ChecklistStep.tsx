@@ -12,6 +12,7 @@ const StepContainer = styled.div`
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+  font-size: 14px;
 `;
 
 const IconWrapper = styled.div<{ checked: boolean }>`
