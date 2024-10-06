@@ -231,7 +231,7 @@ const ChiShapeVisualization: React.FC = () => {
         )
       });
     }
-    console.log('allpoints', allPoints)
+
     const triPoints = arrayUnique(allPoints) as [Vector, Vector, Vector]
     return (
       <>

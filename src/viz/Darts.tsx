@@ -43,7 +43,7 @@ function Darts({ combinatorialMap, points, hoveredDart, setHoveredDart }: DartsP
             dart={dart}
             start={start}
             end={end}
-            theta1End={theta1End}
+            theta1End={theta1Dart ? points[theta1Dart.next] : null}
             isHovered={hoveredDart === dart}
             highlight={hoveredTheta0 ? 'green' : (hoveredTheta1 ? 'blue' : '')}
             onMouseEnter={() => setHoveredDart(dart)}

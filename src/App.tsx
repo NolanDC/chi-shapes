@@ -1,3 +1,4 @@
+import styled from '@emotion/styled';
 import DelaunayVisualization from './ChiShapeVisualization';
 import { MantineProvider, createTheme } from '@mantine/core';
 

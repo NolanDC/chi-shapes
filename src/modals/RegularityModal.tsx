@@ -55,17 +55,17 @@ function RegularityModal({ opened, onClose }: RegularityModalProps) {
   const regularComputer = useMemo(() => new ChiShapeComputer(regularPoints, 1), [regularPoints]);
 
   return (
-    <Modal centered opened={opened} onClose={onClose} title={<Title size={'h2'}>Regularity</Title>} size="xl" padding={40}>
-      <Text mb="md">
+    <Modal centered opened={opened} onClose={onClose} title={<Title size={'h2'}>Regularity</Title>} size="xl" padding={30}>
+      <Text mb="sm">
         The removal of an edge is "regular" if the edge's opposing vertex is an interior vertex, e.g.
         not connected to any boundary edges.
       </Text>
-      <Text mb="md">
+      <Text mb="sm">
         Consider the edge <EdgeSymbol vertex1={0} vertex2={1}/> in both configurations. In the irregular
         setup, the opposite vertex is 2, which is NOT an interior vertex. Removing this edge would thus create an
         irregular triangulation in which vertex 1 would be left dangling.
       </Text>
-      <Text mb="md">
+      <Text mb="sm">
         In the regular setup, the opposite vertex is 4, which is an interior vertex. Removing this edge will leave
         us with a regular triangulation.
       </Text>

@@ -9,6 +9,8 @@ const Colors = {
   lightPurple: 'rgba(243, 231, 243, 1)',
   yellow: 'rgba(117, 95, 33, 1)',
   lightYellow: 'rgba(255, 221, 124, 1)',
+  darkGray: 'rgba(50, 50, 50, 1)',
+  mediumGray: 'rgba(100, 100, 100, 1)'
 }
 
 export default Colors

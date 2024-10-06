@@ -1,24 +1,20 @@
 export class Vector {
   constructor(public x: number, public y: number) {}
 
-  add(v: Vector): void {
-    this.x += v.x;
-    this.y += v.y;
+  add(v: Vector): Vector {
+    return new Vector(this.x + v.x, this.y + v.y)
   }
 
-  sub(v: Vector): void {
-    this.x -= v.x;
-    this.y -= v.y;
+  sub(v: Vector): Vector {
+    return new Vector(this.x - v.x, this.y - v.y)
   }
 
-  mult(n: number): void {
-    this.x *= n;
-    this.y *= n;
+  scale(n: number): Vector {
+    return new Vector(this.x * n, this.y * n)
   }
 
-  div(n: number): void {
-    this.x /= n;
-    this.y /= n;
+  div(n: number): Vector {
+    return new Vector(this.x / n, this.y / n)
   }
 
   mag(): number {
@@ -28,7 +24,7 @@ export class Vector {
   setMag(n: number): void {
     const m = this.mag();
     if (m !== 0) {
-      this.mult(n / m);
+      this.scale(n / m);
     }
   }
 
@@ -42,5 +38,9 @@ export class Vector {
     const dx = this.x - v.x;
     const dy = this.y - v.y;
     return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  normalize(): Vector {
+    return this.div(this.mag())
   }
 }

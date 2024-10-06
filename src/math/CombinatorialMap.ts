@@ -9,7 +9,6 @@ export interface Triangle {
 export interface Dart {
   index: number;
   origin: number;
-  face: number;
   next: number;
   removed?: boolean;
 }
@@ -32,16 +31,16 @@ export class CombinatorialMap {
 
   private buildFromTriangles(triangles: Triangle[], points: Vector[]) {
     // First pass: create all darts and set theta0
-    triangles.forEach((triangle, face) => {
+    triangles.forEach((triangle) => {
       const {a, b, c} = triangle
 
-      const d1 = this.addDart(a, face, b);
-      const d2 = this.addDart(b, face, c);
-      const d3 = this.addDart(c, face, a);
+      const d1 = this.addDart(a, b);
+      const d2 = this.addDart(b, c);
+      const d3 = this.addDart(c, a);
 
-      const d4 = this.addDart(b, face, a)
-      const d5 = this.addDart(c, face, b)
-      const d6 = this.addDart(a, face, c)
+      const d4 = this.addDart(b, a)
+      const d5 = this.addDart(c, b)
+      const d6 = this.addDart(a, c)
 
       this.setTheta0(d1, d4);
       this.setTheta0(d2, d5);
@@ -54,12 +53,12 @@ export class CombinatorialMap {
     }
   }
 
-  private addDart(origin: number, face: number, next: number): Dart {
+  private addDart(origin: number, next: number): Dart {
     const key = `${origin}-${next}`;
     if (this.dartMap.has(key)) {
       return this.dartMap.get(key)!;
     }
-    const dart: Dart = { index: this.darts.length, origin, face, next, removed: false };
+    const dart: Dart = { index: this.darts.length, origin, next, removed: false };
     this.darts.push(dart);
     this.dartMap.set(key, dart);
 
@@ -99,19 +98,25 @@ export class CombinatorialMap {
     return angleB - angleA;
   }
 
-  t0(d: Dart | undefined): Dart | undefined {
-    if (!d) return undefined
+  t0(d: Dart | undefined): Dart {
+    if (!d) throw("Must provide valid dart to t0")
     const result = this.theta0.get(d);
-    return result ? result : undefined;
+    if (!result) {
+      throw ("Could not find theta0 for dart: " + d)
+    } 
+    return result 
   }
 
-  t1(d: Dart | undefined, skipRemoved: boolean = true): Dart | undefined {
-    if (!d) return undefined
+  t1(d: Dart | undefined, skipRemoved: boolean = true): Dart {
+    if (!d) throw("Must provide valid dart to t1")
     let result = this.theta1.get(d);
     if (skipRemoved) {
       while (result && result.removed) {
         result = this.theta1.get(result);
       }
+    }
+    if (!result) {
+      throw ("Could not find theta1 for dart: " + d.index)
     }
     return result;
   }
