@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Vector } from '../math/vector';
 import styled from '@emotion/styled';
 import Colors from '../Colors';
@@ -33,7 +33,7 @@ const MinusSign = styled.text<{ $isHovered: boolean }>`
   font-weight: bold;
 `;
 
-export const Vertex: React.FC<VertexProps> = ({ 
+export const Vertex = ({ 
   point, 
   index, 
   color = "#50434f", 
@@ -41,7 +41,7 @@ export const Vertex: React.FC<VertexProps> = ({
   strokeColor = Colors.purple,
   interactive = true,
   onClick
-}) => {
+}: VertexProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseEnter = () => {

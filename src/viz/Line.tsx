@@ -1,4 +1,3 @@
-import React from 'react';
 import { Vector } from '../math/vector';
 
 interface LineProps {
@@ -8,7 +7,7 @@ interface LineProps {
   strokeWidth: number;
 }
 
-export const Line: React.FC<LineProps> = ({ start, end, stroke, strokeWidth }) => {
+export const Line = ({ start, end, stroke, strokeWidth }: LineProps) => {
   return (
     <line
       x1={start.x}

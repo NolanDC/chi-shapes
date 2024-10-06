@@ -90,7 +90,6 @@ const BoundaryEdgeSVGs = () => {
           isHovered={hoveredDart?.index === dart.index}
           highlight={isEdgeDart ? Colors.mediumGray : ""}
           color={Colors.mediumGray}
-          opacity={isWalkDart || isEdgeDart ? 1 : 0.5}
           onMouseEnter={() => setHoveredDart(dart)}
           onMouseLeave={() => setHoveredDart(null)}
           renderThetaOperations={false}

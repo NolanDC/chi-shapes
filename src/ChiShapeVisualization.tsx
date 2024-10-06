@@ -5,7 +5,7 @@ import { ChiShapeComputer, ComputationStep} from './math/ChiShapeComputer';
 import { Dart } from './math/CombinatorialMap';
 import { Vertex } from './viz/Vertex';
 import SliderControl from './ui/SliderControl';
-import { Slider, Checkbox, Popover, Text } from '@mantine/core';
+import { Checkbox } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
@@ -19,7 +19,7 @@ import OverviewModal from './modals/OverviewModal';
 import { CircleHelp } from 'lucide-react';
 import { TriangleView } from './viz/TriangleView';
 import BoundaryModal from './modals/BoundaryModal';
-import { jitteredGridPoints, randomPoints } from './generatePoints';
+import { jitteredGridPoints } from './generatePoints';
 import { LambdaSlider } from './ui/LambdaSlider';
 
 const Container = styled.div`
@@ -95,7 +95,7 @@ const AlgorithmOverviewIcon = styled(CircleHelp)`
   }
 `
 
-const ChiShapeVisualization: React.FC = () => {
+const ChiShapeVisualization = () => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const [points, setPoints] = useState<Vector[]>([]);
@@ -163,30 +163,6 @@ const ChiShapeVisualization: React.FC = () => {
       return prevPoints;
     });
   }
-
-  
-
-  const getDartInfo = () => {
-    if (hoveredDart === null || !combinatorialMap) return null;
-
-    const dart = combinatorialMap.darts[hoveredDart.index];
-    if (!dart) return null;
-
-    const theta0 = combinatorialMap.t0(dart);
-    const theta1 = combinatorialMap.t1(dart);
-    const isBoundary = combinatorialMap.isBoundaryEdge(dart, combinatorialMap.theta0.get(dart)!);
-    const boundaryInfo = combinatorialMap.boundaryEdgeInfo(dart, combinatorialMap.theta0.get(dart)!)
-
-    return (
-      <div>
-        <p>Dart {hoveredDart.index}: from {dart.origin} to {dart.next}</p>
-        <p>Edge Length: {combinatorialMap.edgeLength(dart).toFixed(2)}</p>
-        <p>θ₀: {theta0 ? theta0.index : 'N/A'}</p>
-        <p>θ₁: {theta1 ? theta1.index : 'N/A'}</p>
-        <p>Boundary Edge: {isBoundary ? 'Yes' : 'No'}</p>
-      </div>
-    );
-  };
 
   const renderCurrentStep = () => {
     if (!currentStep || !currentStep.edge) return null;
@@ -345,7 +321,6 @@ const ChiShapeVisualization: React.FC = () => {
             )}
           </div>
         )}
-        {getDartInfo()}
       </InfoPanel>
       <VisualizationContainer>
         <AppTitle>

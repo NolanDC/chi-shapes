@@ -1,4 +1,3 @@
-import React from 'react';
 import { Vertex } from '../viz/Vertex';
 import { Line } from '../viz/Line';
 import { Vector } from '../math/vector';
@@ -15,7 +14,7 @@ const VertexSVG = styled.svg`
   vertical-align: bottom;
 `
 
-const EdgeSymbol: React.FC<EdgeSymbolProps> = ({ vertex1, vertex2 }) => {
+const EdgeSymbol = ({ vertex1, vertex2 }: EdgeSymbolProps) => {
   const svgWidth = 120;
   const svgHeight = 30;
   const padding = 20;

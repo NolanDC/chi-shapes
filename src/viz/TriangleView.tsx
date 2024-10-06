@@ -1,4 +1,3 @@
-import React from 'react';
 import { Vector } from '../math/vector';
 
 interface TriangleViewProps {
@@ -8,7 +7,7 @@ interface TriangleViewProps {
   strokeWidth: number;
 }
 
-export const TriangleView: React.FC<TriangleViewProps> = ({ points, fill, stroke, strokeWidth }) => {
+export const TriangleView = ({ points, fill, stroke, strokeWidth }: TriangleViewProps) => {
   return (
     <polygon
       points={points.map(p => `${p.x},${p.y}`).join(' ')}

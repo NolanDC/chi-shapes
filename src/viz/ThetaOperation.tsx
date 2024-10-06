@@ -1,4 +1,3 @@
-import React from 'react';
 import Colors from '../Colors';
 
 interface ThetaOperationProps {
@@ -7,7 +6,7 @@ interface ThetaOperationProps {
   type: '0' | '1';
 }
 
-export const ThetaOperation: React.FC<ThetaOperationProps> = ({ x, y, type}) => {
+export const ThetaOperation = ({ x, y, type}: ThetaOperationProps) => {
   return (
     <text
       x={x}

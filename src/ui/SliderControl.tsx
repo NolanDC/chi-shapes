@@ -1,4 +1,3 @@
-import React from 'react';
 import styled from '@emotion/styled';
 import { Slider } from '@mantine/core';
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from 'lucide-react';
@@ -12,10 +11,14 @@ const SliderContainer = styled.div`
 `;
 
 const InteractionContainer = styled.div`
-  width: 100%;
+  width: 80%;
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }  
 `;
 
 const SliderWrapper = styled.div`
@@ -26,34 +29,33 @@ const SliderWrapper = styled.div`
 
 const ControlsWrapper = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   width: 100%;
   padding: 0 20px;
 
-  @media (min-width: 600px) {
-    width: auto;
-    min-width: 300px;
+  @media (max-width: 768px) {
+    justify-content: space-between;
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   align-items: center;
+  max-width: 400px;
+  justify-content: center;
 
-  @media (min-width: 600px) {
-    width: 100px;
-  }
 `;
 
 const LeftButtonGroup = styled(ButtonGroup)`
-  @media (min-width: 600px) {
+  justify-content: space-between;
+  @media (max-width: 600px) {
     justify-content: flex-end;
   }
 `;
 
 const RightButtonGroup = styled(ButtonGroup)`
-  @media (min-width: 600px) {
+  @media (max-width: 600px) {
     justify-content: flex-start;
   }
 `;
@@ -91,7 +93,7 @@ interface SliderControlProps {
   onStepChange: (step: number) => void;
 }
 
-const SliderControl: React.FC<SliderControlProps> = ({ stepIndex, totalSteps, onStepChange }) => {
+const SliderControl = ({ stepIndex, totalSteps, onStepChange }: SliderControlProps) => {
   return (
     <SliderContainer>
       <InteractionContainer>

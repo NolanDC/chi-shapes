@@ -1,4 +1,3 @@
-import React from 'react';
 import { Vector } from '../math/vector';
 import { CombinatorialMap } from '../math/CombinatorialMap';
 import styled from '@emotion/styled';
@@ -13,7 +12,6 @@ interface DartViewProps {
   isHovered: boolean;
   highlight: string;
   color?: string;
-  opacity?: number;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   label?: string;
@@ -25,7 +23,7 @@ const DartText = styled.text`
   user-select: none;
 `
 
-export const DartView: React.FC<DartViewProps> = ({ 
+export const DartView = ({ 
   dart, 
   start, 
   end, 
@@ -33,12 +31,11 @@ export const DartView: React.FC<DartViewProps> = ({
   isHovered, 
   highlight, 
   color = Colors.mediumGray,
-  opacity = 0.8,
   onMouseEnter, 
   onMouseLeave,
   label,
   renderThetaOperations = true
-}) => {
+}: DartViewProps) => {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const angle = Math.atan2(dy, dx);
@@ -50,11 +47,6 @@ export const DartView: React.FC<DartViewProps> = ({
   const midY = start.y + dy * 0.18;
 
   let stroke = color;
-  if (isHovered) {
-    stroke = 'rgba(255, 0, 0, 0.8)';
-  } else if (highlight) {
-    stroke = highlight;
-  }
 
   // Calculate arrow points
   const arrowWidth = 6;
@@ -125,13 +117,11 @@ export const DartView: React.FC<DartViewProps> = ({
         y2={dartEndY}
         stroke={stroke}
         strokeWidth={(isHovered || highlight !== '') ? "4" : "2"}
-        opacity={opacity}
         pointerEvents="none"
       />
       <polygon
         points={`0,${-arrowWidth} ${arrowLength},0 0,${arrowWidth}`}
         fill={stroke}
-        opacity={opacity}
         transform={`translate(${dartEndX},${dartEndY}) rotate(${angle * 180 / Math.PI})`}
         pointerEvents="none"
       />
@@ -146,7 +136,6 @@ export const DartView: React.FC<DartViewProps> = ({
         paintOrder="stroke"
         fontSize="12"
         fontWeight="bold"
-        opacity={opacity}
       >
         {label || dart.index}
       </DartText>

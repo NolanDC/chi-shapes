@@ -1,6 +1,7 @@
 import { Vector } from '../math/vector';
 import { CombinatorialMap, Dart } from '../math/CombinatorialMap';
 import { DartView } from './DartView';
+import Colors from '../Colors';
 
 interface DartsProps {
   combinatorialMap: CombinatorialMap;
@@ -45,7 +46,7 @@ function Darts({ combinatorialMap, points, hoveredDart, setHoveredDart }: DartsP
             end={end}
             theta1End={theta1Dart ? points[theta1Dart.next] : null}
             isHovered={hoveredDart === dart}
-            highlight={hoveredTheta0 ? 'green' : (hoveredTheta1 ? 'blue' : '')}
+            highlight={(hoveredTheta0 || hoveredTheta1) ? Colors.darkGray : ''}
             onMouseEnter={() => setHoveredDart(dart)}
             onMouseLeave={() => setHoveredDart(null)}
           />
