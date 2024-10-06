@@ -109,8 +109,8 @@ const BoundaryEdgeSVGs = () => {
 
       if (isTheta1) {
         // Render θ₁ operation
-        const currentMidPoint = start.add(end.sub(start).scale(0.15));
-        const nextMidPoint = points[nextDart.origin].add(points[nextDart.next].sub(points[nextDart.origin]).scale(0.15));
+        const currentMidPoint = start.add(end.sub(start).scale(0.2));
+        const nextMidPoint = points[nextDart.origin].add(points[nextDart.next].sub(points[nextDart.origin]).scale(0.2));
         const theta1Point = currentMidPoint.add(nextMidPoint.sub(currentMidPoint).scale(0.5));
         
         return (
@@ -139,7 +139,7 @@ const BoundaryEdgeSVGs = () => {
   return (
     <FlexContainer>
       <SVGContainer>
-        <SVGTitle>Non-Boundary Edge</SVGTitle>
+        <SVGTitle>Interior Edge</SVGTitle>
         <svg width={300} height={300}>
           <Polygon 
             points={nonBoundaryPoints.filter((_, i) => i !== 4)}

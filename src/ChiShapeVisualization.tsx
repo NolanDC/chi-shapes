@@ -20,6 +20,7 @@ import { CircleHelp } from 'lucide-react';
 import { TriangleView } from './viz/TriangleView';
 import BoundaryModal from './modals/BoundaryModal';
 import { jitteredGridPoints, randomPoints } from './generatePoints';
+import { LambdaSlider } from './ui/LambdaSlider';
 
 const Container = styled.div`
   display: flex;
@@ -65,31 +66,7 @@ const SVGContainer = styled.div`
   }  
 `;
 
-const LambdaSliderContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-contnet: center;
-`
-const LambdaIcon = styled.div`
-  background: #4997bd;
-  color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 27px;
-  font-size: 14px;
-  font-weight: bold;
-  flex-shrink: 0;
-  margin-right: 15px;
-`
 
-const LambdaValue = styled.div`
-  margin-left: 10px;
-  width: 35px;
-  flex-shrink: 0;
-`
 
 const ModalButton = styled.span`
   background-color: unset;
@@ -301,42 +278,7 @@ const ChiShapeVisualization: React.FC = () => {
       <BoundaryModal opened={showBoundaryModal} onClose={() => setShowBoundaryModal(false)}/>
       <InfoPanel>
         <div style={{ marginBottom: '20px' }}>
-          
-          <LambdaSliderContainer>
-            <Popover withArrow shadow='md' opened={showLambdaPopover}>
-              <Popover.Target>
-                <LambdaIcon 
-                onMouseEnter={() => setShowLambdaPopover(true)}
-                onMouseLeave={() => setShowLambdaPopover(false)}>
-                  <span>λ<sub>p</sub></span>
-                </LambdaIcon>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <Text size="sm">
-                  <span>λ<sub>p</sub></span> controls the length threshold used to determine
-                  which edges to remove. 
-                  <br/>
-                  <span>λ<sub>p</sub></span> = 0 means that all edges that can be removed
-                  will be.
-                  <br/>
-                  <span>λ<sub>p</sub></span> = 1 means no edges will be removed.
-                </Text>
-              </Popover.Dropdown>
-            </Popover>
-            
-            <Slider
-              value={lambda}
-              onChange={setLambda}
-              min={0}
-              max={1}
-              step={0.01}
-              label={(value) => value.toFixed(2)}
-              styles={{ root: { width: '100%' } }}
-            />
-            <LambdaValue>
-              {lambda}
-            </LambdaValue>
-          </LambdaSliderContainer>
+          <LambdaSlider lambda={lambda} setLambda={setLambda}/>
         </div>
         <div style={{ marginBottom: '20px' }}>
           <Checkbox
