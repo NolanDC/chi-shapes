@@ -1,5 +1,5 @@
 import styled from "@emotion/styled"
-import { Popover, Slider, Text } from "@mantine/core"
+import { Slider } from "@mantine/core"
 import { useState } from "react"
 import LambdaModal from "../modals/LambdaModal"
 import { HelpCircle } from "lucide-react"

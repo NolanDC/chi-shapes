@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import { Modal, Text, Title } from '@mantine/core';
+import StyledLink from '../ui/StyledLink';
 
 interface OverviewModalProps {
   opened: boolean;
@@ -32,7 +33,7 @@ function OverviewModal({ opened, onClose }: OverviewModalProps) {
       <Text mb="sm">
         A simplified description of the algorithm is as follows:
         <AlgorithmList>
-          <li>Compute the <a style={{color:'#2a7597'}} target='_blank' href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay Triangulation</a> for the set of points</li>
+          <li>Compute the <StyledLink target='_blank' href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay Triangulation</StyledLink> for the set of points</li>
           <li>
             Loop through a list of boundary edges, sorted in order of descending length
             <ul>
@@ -45,7 +46,7 @@ function OverviewModal({ opened, onClose }: OverviewModalProps) {
         </AlgorithmList>
       </Text>
       <Text mb="sm">
-        The original paper detailing the algorithm can be found <a style={{color:'#2a7597'}} href="https://www.geosensor.net/papers/duckham08.PR.pdf" target="_blank">here</a>.
+        The original paper detailing the algorithm can be found <StyledLink href="https://www.geosensor.net/papers/duckham08.PR.pdf" target="_blank">here</StyledLink>.
       </Text>
     </Modal>
   );

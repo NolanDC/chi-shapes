@@ -1,4 +1,3 @@
-import styled from '@emotion/styled';
 import { Modal, Text, Title } from '@mantine/core';
 
 interface LambdaModalProps {

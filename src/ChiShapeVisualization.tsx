@@ -21,6 +21,7 @@ import { TriangleView } from './viz/TriangleView';
 import BoundaryModal from './modals/BoundaryModal';
 import { jitteredGridPoints } from './generatePoints';
 import { LambdaSlider } from './ui/LambdaSlider';
+import StyledLink from './ui/StyledLink';
 
 const Container = styled.div`
   display: flex;
@@ -40,11 +41,17 @@ const Container = styled.div`
 const InfoPanel = styled.div`
   width: 350px;
   padding: 30px;
+  display: flex;
+  flex-direction: column;
   @media (max-width: 768px) {
     order: 2;
     width: 100%;
   }
 `;
+
+const SiteLinks = styled.div`
+  margin-top: auto;
+`
 
 const StepTitle = styled.h3`
   margin-top: 30px;
@@ -107,6 +114,8 @@ const AlgorithmOverviewIcon = styled(CircleHelp)`
 const CurrentEdge = styled.div`
   margin-bottom: 15px;
 `
+
+
 
 const ChiShapeVisualization = () => {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -303,7 +312,7 @@ const ChiShapeVisualization = () => {
         {currentStep && currentStep.type == 'init' && (
           <div>
             <Text size="md" mb="md">
-              1. Find the Delaunay triangulation
+              1. Compute the <StyledLink target='_blank' href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay Triangulation</StyledLink>
             </Text>
             <Text size="md" mb="md">
               2. Find the border of the triangulation. This is our initial "chi-shape" from which 
@@ -342,6 +351,13 @@ const ChiShapeVisualization = () => {
             )}
           </div>
         )}
+        <SiteLinks>
+          <Text size="sm">
+            made by: <StyledLink href="https://nolandc.com">nolan carroll</StyledLink>
+            <br/>
+            github: <StyledLink href="https://github.com/nolandc/chi-shapes">chi-shapes</StyledLink>
+          </Text>
+        </SiteLinks>        
       </InfoPanel>
       <VisualizationContainer>
         <AppTitle>

@@ -25,14 +25,6 @@ const VertexNumber = styled.text`
   font-weight: bold;
 `;
 
-const MinusSign = styled.text<{ $isHovered: boolean }>`
-  opacity: ${props => (props.$isHovered ? 1 : 0)};
-  transition: opacity 0.2s ease-in-out;
-  pointer-events: none;
-  user-select: none;
-  font-weight: bold;
-`;
-
 export const Vertex = ({ 
   point, 
   index, 

@@ -109,6 +109,9 @@ export class ChiShapeComputer {
     return edgeArray;
   }
 
+  // Leaving this here for future usage - compute the chi-shape without
+  // storing state at each step. May be slightly out of date / need updates to
+  // work properly
   private computeChiShape(): Edge[] {
     const chiShape = new Set(this.boundaryEdges);
     let index = 0;

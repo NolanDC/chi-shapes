@@ -42,7 +42,7 @@ const BoundaryEdgeSVGs = () => {
   ], []);
 
   const boundaryPoints = useMemo(() => [
-    new Vector(30, 30),
+    new Vector(210, 210),
     new Vector(270, 30),
     new Vector(270, 270),
     new Vector(30, 270)

@@ -1,6 +1,7 @@
 import { Modal, Text, Title } from '@mantine/core';
 import styled from '@emotion/styled';
 import BoundaryEdgeSVGs from './BoundaryEdgeSVGs';
+import StyledLink from '../ui/StyledLink';
 
 const FunctionDescriptions = styled.div`
   background: #f2f2f2;
@@ -33,7 +34,7 @@ function BoundaryModal({ opened, onClose }: BoundaryModalProps) {
   return (
     <Modal centered opened={opened} onClose={onClose} title={<Title size={'h2'}>Boundary Edges</Title>} size="xl" padding={30}>
       <Text mb="sm">
-        The algorithm relies on constructing a <a style={{color:'#2a7597'}} href="https://en.wikipedia.org/wiki/Combinatorial_map" target="_blank">combinatorial map</a> containing a
+        The algorithm relies on constructing a <StyledLink href="https://en.wikipedia.org/wiki/Combinatorial_map" target="_blank">combinatorial map</StyledLink> containing a
         set of darts, which are essentially half-edges protruding from a vertex. This map defines a couple of functions:
       </Text>
       <Text mb="sm">

@@ -35,8 +35,6 @@ function Darts({ combinatorialMap, points, selectedDart, setSelectedDart }: Dart
           }
         }
 
-        console.log('hovered dart', selectedDart)
-        console.log('t0 ', combinatorialMap.theta0)
         const hoveredTheta0 = selectedDart && combinatorialMap.t0(selectedDart) === dart;
         const hoveredTheta1 = selectedDart && combinatorialMap.t1(selectedDart) === dart;
 
@@ -50,6 +48,7 @@ function Darts({ combinatorialMap, points, selectedDart, setSelectedDart }: Dart
             isSelected={selectedDart === dart}
             highlight={(hoveredTheta0 || hoveredTheta1) ? Colors.darkGray : ''}
             onClick={() => setSelectedDart(dart)}
+            renderThetaOperations={true}
           />
         );
       })}
