@@ -60,7 +60,7 @@ function BoundaryModal({ opened, onClose }: BoundaryModalProps) {
       </Text>
       <BoundaryEdgeSVGs/>
       <InstructionsText>
-        <i>Hover over the darts to see all darts along the boundary walk.</i>
+        <i>Click a dart on the highlighted edge to see all darts along the boundary walk.</i>
       </InstructionsText>
     </Modal>
   );

@@ -5,7 +5,7 @@ import { ChiShapeComputer, ComputationStep} from './math/ChiShapeComputer';
 import { Dart } from './math/CombinatorialMap';
 import { Vertex } from './viz/Vertex';
 import SliderControl from './ui/SliderControl';
-import { Checkbox } from '@mantine/core';
+import { Checkbox, Text } from '@mantine/core';
 import Colors from './Colors';
 import ChecklistStep from './ui/ChecklistStep';
 import ColorLabel from './ui/ColorLabel';
@@ -46,6 +46,10 @@ const InfoPanel = styled.div`
   }
 `;
 
+const StepTitle = styled.h3`
+  margin-top: 30px;
+  margin-bottom: 10px;
+`
 const VisualizationContainer = styled.div`
   flex: 1;
   display: flex;
@@ -98,6 +102,10 @@ const AlgorithmOverviewIcon = styled(CircleHelp)`
   &:hover {
     color: black;
   }
+`
+
+const CurrentEdge = styled.div`
+  margin-bottom: 15px;
 `
 
 const ChiShapeVisualization = () => {
@@ -283,16 +291,24 @@ const ChiShapeVisualization = () => {
             onChange={(event) => setShowDarts(event.currentTarget.checked)}
           />
         </div>        
-        <h3>Step {stepIndex+1} / {steps.length}</h3>
+        <StepTitle>
+          Step {stepIndex+1} / {steps.length} -  
+          {currentStep && currentStep.type == 'init' ? ' Initialize' : ' Edge Check'}
+        </StepTitle>
+        {currentStep && currentStep.edge && (
+          <CurrentEdge>
+            Current Edge: <EdgeSymbol vertex1={currentStep.edge.d1.origin} vertex2={currentStep.edge.d2.origin}/>
+          </CurrentEdge>
+        )}
         {currentStep && currentStep.type == 'init' && (
           <div>
-            <h4>Initialization</h4>
-            Before running our algorithm, we must:
-            <ul>
-              <li>find the Delaunay triangulation</li>
-              <li>find the border of the triangulation. This is our initial "chi-shape" from which 
-              we will carve away to arrive at the final shape.</li>
-            </ul>
+            <Text size="md" mb="md">
+              1. Find the Delaunay triangulation
+            </Text>
+            <Text size="md" mb="md">
+              2. Find the border of the triangulation. This is our initial "chi-shape" from which 
+              we will carve away to arrive at the final shape
+            </Text>
           </div>
         )}
         {currentStep && (
@@ -311,8 +327,7 @@ const ChiShapeVisualization = () => {
                 </ChecklistStep>              
                 <p>
                   <ColorLabel backgroundColor={currentStep.type == 'skip' ? Colors.lightYellow : Colors.lightRed}>{titleCase(currentStep.type)}</ColorLabel>
-                  edge
-                  <EdgeSymbol vertex1={currentStep.edge.d1.origin} vertex2={currentStep.edge.d2.origin}/>
+                   current edge
                 </p>
                 <div>
                 {currentStep.newEdges?.map(edge => (

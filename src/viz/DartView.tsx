@@ -15,7 +15,7 @@ interface DartViewProps {
   isSelected: boolean;
   highlight: string;
   color?: string;
-  onClick: () => void;
+  onClick?: () => void;
   label?: string;
   renderThetaOperations?: boolean
 }
@@ -101,7 +101,6 @@ export const DartView = ({
     const distance = 55
     const currentMidPoint = new Vector(dx, dy).normalize().scale(distance);
     const nextMidPoint = new Vector(theta1End.x - start.x, theta1End.y - start.y).normalize().scale(distance);
-    const theta1Point = currentMidPoint.add(start).add(nextMidPoint.add(start).sub(currentMidPoint.add(start)).scale(0.5));
 
     return (
 
@@ -120,12 +119,12 @@ export const DartView = ({
   };
 
   return (
-    <g onClick={(e) => {e.stopPropagation(); onClick?.()}}>
+    <g onClick={(e) => {onClick && e.stopPropagation(); onClick?.()}}>
       <path
         d={hitboxPath}
         fill="transparent"
         stroke="transparent"
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: onClick ? 'pointer' : 'unset' }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       />
@@ -135,7 +134,7 @@ export const DartView = ({
         x2={dartEndX}
         y2={dartEndY}
         stroke={stroke}
-        strokeWidth={(isSelected || hovered || highlight !== '') ? "4" : "2"}
+        strokeWidth={(isSelected || (hovered && onClick) || highlight !== '') ? "4" : "2"}
         pointerEvents="none"
       />
       <polygon

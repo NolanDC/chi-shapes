@@ -88,9 +88,9 @@ const BoundaryEdgeSVGs = () => {
           end={points[dart.next]}
           theta1End={points[combiMap.t1(dart)?.next ?? dart.next]}
           isSelected={selectedDart?.index === dart.index}
-          highlight={isEdgeDart ? Colors.mediumGray : ""}
-          color={Colors.mediumGray}
-          onClick={() => isEdgeDart && setSelectedDart(dart)}
+          highlight={''} 
+          color={isEdgeDart ? Colors.mediumGray : Colors.lightGray}
+          onClick={isEdgeDart ? (() => setSelectedDart(dart)) : undefined}
           renderThetaOperations={false}
         />
       );
