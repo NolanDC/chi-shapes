@@ -78,17 +78,6 @@ export const Vertex = ({
       >
         {index}
       </VertexNumber>
-      {interactive && (
-        <MinusSign
-          x={point.x - 18}
-          y={point.y - 10}
-          fill="#50434f"
-          fontSize="24"
-          $isHovered={isHovered}
-        >
-          -
-        </MinusSign>
-      )}
     </g>
   );
 };

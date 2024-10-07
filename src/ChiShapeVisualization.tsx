@@ -86,6 +86,11 @@ const AppTitle = styled.div`
   align-items: center;
 `
 
+const InstructionsText = styled.div`
+  font-style: italic;
+  color: #aaa;
+  text-align: center;
+`
 const AlgorithmOverviewIcon = styled(CircleHelp)`
   color: gray;
   width: 24px;
@@ -100,12 +105,16 @@ const ChiShapeVisualization = () => {
 
   const [points, setPoints] = useState<Vector[]>([]);
   const [lambda, setLambda] = useState(0);
-  const [hoveredDart, setHoveredDart] = useState<Dart | null>(null);
+  const [selectedDart, setSelectedDart] = useState<Dart | null>(null);
   const [stepIndex, setStepIndex] = useState<number>(0);
 
   const [showDarts, setShowDarts] = useState(false);
   const [showDelaunay, setShowDelaunay] = useState(true);  
   const [showChiShape, setShowChiShape] = useState(true);
+
+  useEffect(() => {
+    setSelectedDart(null)
+  }, [points])
 
   const steps = useMemo(() => new ChiShapeComputer(points, lambda).getComputationSteps(), [points, lambda]);
   const currentStep: ComputationStep = useMemo(() => steps[stepIndex], [steps, stepIndex]);
@@ -114,7 +123,6 @@ const ChiShapeVisualization = () => {
 
   const [showRegularityModal, setShowRegularityModal] = useState(false)
   const [showOverviewModal, setShowOverviewModal] = useState(false)
-  const [showLambdaPopover, setShowLambdaPopover] = useState(false)
   const [showBoundaryModal, setShowBoundaryModal] = useState(false)
 
   useEffect(() => {
@@ -124,8 +132,11 @@ const ChiShapeVisualization = () => {
   }, [points, lambda]);
 
   useEffect(() => {
+    setSelectedDart(null)
+  }, [chiShapeComputer])
+
+  useEffect(() => {
     if (!svgRef.current) return
-    //setPoints(randomPoints(10, svgRef.current.getBoundingClientRect()));
     setPoints(jitteredGridPoints(10, svgRef))
   }, []);
 
@@ -141,19 +152,14 @@ const ChiShapeVisualization = () => {
     const x = e.clientX - svgRect.left;
     const y = e.clientY - svgRect.top;
     const clickedPoint = new Vector(x, y);
-
+    setSelectedDart(null)
     setPoints(prevPoints => {
-      const existingPointIndex = prevPoints.findIndex(p => p.dist(clickedPoint) < 10);
-      
-      if (existingPointIndex !== -1) {
-        return prevPoints.filter((_, index) => index !== existingPointIndex);
-      } else {
         return [...prevPoints, clickedPoint];
-      }
     });
   };
 
-  const removePoint = (point: Vector) => {
+  const removePoint = (point: Vector) => { 
+    setSelectedDart(null)
     setPoints(prevPoints => {
       const existingPointIndex = prevPoints.findIndex(p => p === point);
       
@@ -253,24 +259,24 @@ const ChiShapeVisualization = () => {
       <OverviewModal opened={showOverviewModal} onClose={() => setShowOverviewModal(false)}/>
       <BoundaryModal opened={showBoundaryModal} onClose={() => setShowBoundaryModal(false)}/>
       <InfoPanel>
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '18px' }}>
           <LambdaSlider lambda={lambda} setLambda={setLambda}/>
         </div>
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '18px' }}>
           <Checkbox
             label="Show Chi-shape"
             checked={showChiShape}
             onChange={(event) => setShowChiShape(event.currentTarget.checked)}
           />
         </div>        
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '18px' }}>
           <Checkbox
             label="Show Delaunay triangulation"
             checked={showDelaunay}
             onChange={(event) => setShowDelaunay(event.currentTarget.checked)}
           />
         </div>
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '18px' }}>
           <Checkbox
             label="Show darts"
             checked={showDarts}
@@ -327,6 +333,7 @@ const ChiShapeVisualization = () => {
           <div>Chi Shape Algorithm</div>
           <AlgorithmOverviewIcon onClick={() => setShowOverviewModal(true)}/>
         </AppTitle>
+        <InstructionsText>click to add / remove points</InstructionsText>
         <SVGContainer>
           <svg
             ref={svgRef}
@@ -347,7 +354,7 @@ const ChiShapeVisualization = () => {
               <DelaunayTriangulation combinatorialMap={combinatorialMap} points={points}/>
             }
             {showDarts && 
-              <Darts combinatorialMap={combinatorialMap} points={points} hoveredDart={hoveredDart} setHoveredDart={setHoveredDart}/>
+              <Darts combinatorialMap={combinatorialMap} points={points} selectedDart={selectedDart} setSelectedDart={setSelectedDart}/>
             }
             {renderPoints()}
           </svg>

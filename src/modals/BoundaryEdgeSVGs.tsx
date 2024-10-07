@@ -51,8 +51,8 @@ const BoundaryEdgeSVGs = () => {
   const nonBoundaryComputer = useMemo(() => new ChiShapeComputer(nonBoundaryPoints, 1), [nonBoundaryPoints]);
   const boundaryComputer = useMemo(() => new ChiShapeComputer(boundaryPoints, 1), [boundaryPoints]);
 
-  const [hoveredNonBoundaryDart, setHoveredNonBoundaryDart] = useState<Dart | null>(null);
-  const [hoveredBoundaryDart, setHoveredBoundaryDart] = useState<Dart | null>(null);
+  const [selectedNonBoundaryDart, setSelectedNonBoundaryDart] = useState<Dart | null>(null);
+  const [selectedBoundaryDart, setSelectedBoundaryDart] = useState<Dart | null>(null);
 
   const getWalkDarts = (combiMap: CombinatorialMap, startDart: Dart): Dart[] => {
     const walkDarts = [startDart];
@@ -65,13 +65,13 @@ const BoundaryEdgeSVGs = () => {
     return walkDarts;
   };
 
-  const renderDartsAndOperations = (points: Vector[], combiMap: CombinatorialMap, highlightedEdge: [number, number], hoveredDart: Dart | null, setHoveredDart: React.Dispatch<React.SetStateAction<Dart | null>>) => {
+  const renderDartsAndOperations = (points: Vector[], combiMap: CombinatorialMap, highlightedEdge: [number, number], selectedDart: Dart | null, setSelectedDart: React.Dispatch<React.SetStateAction<Dart | null>>) => {
     const edgeDarts = combiMap.darts.filter(dart => 
       (dart.origin === highlightedEdge[0] && dart.next === highlightedEdge[1]) || 
       (dart.origin === highlightedEdge[1] && dart.next === highlightedEdge[0])
     );
 
-    const walkDarts = hoveredDart ? getWalkDarts(combiMap, hoveredDart) : [];
+    const walkDarts = selectedDart ? getWalkDarts(combiMap, selectedDart) : [];
 
     const darts = combiMap.darts.map((dart, index) => {
       const isEdgeDart = edgeDarts.some(d => d.index === dart.index);
@@ -87,11 +87,10 @@ const BoundaryEdgeSVGs = () => {
           start={points[dart.origin]}
           end={points[dart.next]}
           theta1End={points[combiMap.t1(dart)?.next ?? dart.next]}
-          isHovered={hoveredDart?.index === dart.index}
+          isSelected={selectedDart?.index === dart.index}
           highlight={isEdgeDart ? Colors.mediumGray : ""}
           color={Colors.mediumGray}
-          onMouseEnter={() => setHoveredDart(dart)}
-          onMouseLeave={() => setHoveredDart(null)}
+          onClick={() => isEdgeDart && setSelectedDart(dart)}
           renderThetaOperations={false}
         />
       );
@@ -113,11 +112,13 @@ const BoundaryEdgeSVGs = () => {
         const theta1Point = currentMidPoint.add(nextMidPoint.sub(currentMidPoint).scale(0.5));
         
         return (
-          <ThetaOperation
-            x={theta1Point.x}
-            y={theta1Point.y}
-            type="1"
-          />
+          <>
+            <ThetaOperation
+              x={theta1Point.x}
+              y={theta1Point.y}
+              type="1"
+            />
+          </>
         );
       } else {
         // Render θ₀ operation
@@ -156,7 +157,7 @@ const BoundaryEdgeSVGs = () => {
             stroke={Colors.lightYellow}
             strokeWidth={5}
           />
-          {renderDartsAndOperations(nonBoundaryPoints, nonBoundaryComputer.getCombinatorialMap(), [0, 4], hoveredNonBoundaryDart, setHoveredNonBoundaryDart)}
+          {renderDartsAndOperations(nonBoundaryPoints, nonBoundaryComputer.getCombinatorialMap(), [0, 4], selectedNonBoundaryDart, setSelectedNonBoundaryDart)}
           {nonBoundaryPoints.map((point, index) => (
             <Vertex
               key={index}
@@ -188,7 +189,7 @@ const BoundaryEdgeSVGs = () => {
             stroke={Colors.lightGreen}
             strokeWidth={5}
           />
-          {renderDartsAndOperations(boundaryPoints, boundaryComputer.getCombinatorialMap(), [0, 1], hoveredBoundaryDart, setHoveredBoundaryDart)}
+          {renderDartsAndOperations(boundaryPoints, boundaryComputer.getCombinatorialMap(), [0, 1], selectedBoundaryDart, setSelectedBoundaryDart)}
           {boundaryPoints.map((point, index) => (
             <Vertex
               key={index}

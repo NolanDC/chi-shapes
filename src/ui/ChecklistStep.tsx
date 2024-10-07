@@ -11,7 +11,7 @@ const StepContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
   font-size: 14px;
 `;
 
